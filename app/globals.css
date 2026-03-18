@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+:root {
+  --pink: #ff1f8e;
+  --pink-light: #ff6ec7;
+  --pink-dark: #cc005e;
+  --dark: #111113;
+  --dark-2: #1b1b1e;
+  --dark-3: #242428;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  background: var(--dark);
+  color: white;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pink-dark);
+  border-radius: 2px;
+}
+
+/* Allow map SVG to render paths outside its natural bounds (needed for USA) */
+.rsm-svg {
+  overflow: visible;
+}
+
+/* Map region styles */
+.map-region {
+  fill: #1a1a1f;
+  stroke: #2a2a32;
+  stroke-width: 0.4;
+  transition: fill 0.15s ease, stroke 0.15s ease, stroke-width 0.15s ease;
+}
+
+.map-region.hoverable {
+  cursor: pointer;
+}
+
+.map-region.hoverable:hover,
+.map-region.active {
+  fill: #1c1018;
+  stroke: rgba(255, 31, 142, 0.2);
+  stroke-width: 0.5;
+}
+
+.map-region.greece {
+  fill: #2c2c30;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 0.7;
+}
+
+/* Animated dash for connectors */
+@keyframes dashMove {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+.connector-animated {
+  animation: dashMove 3s linear infinite;
+}
+
+/* Dot pulse on endpoints */
+@keyframes pulse {
+  0%, 100% { r: 3; opacity: 0.8; }
+  50% { r: 5; opacity: 1; }
+}
+
+.endpoint-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Subregion info box entrance */
+@keyframes pinFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Freeze all per-element paint work during map pan/zoom so the GPU layer stays clean */
+.map-animating .map-region         { transition: none !important; }
+.map-animating .connector-animated { animation:  none !important; }
+.map-animating .endpoint-dot       { animation:  none !important; }
+
+/* Active service region highlighting — driven by container class, no React re-render */
+.active-market-entry      .market-entry,
+.active-commercial-rep    .commercial-rep,
+.active-operational-setup .operational-setup,
+.active-regulatory        .regulatory,
+.active-local-ops         .local-ops,
+.active-business-dev      .business-dev {
+  fill: #1c1018;
+  stroke: rgba(255, 31, 142, 0.22);
+  stroke-width: 0.5;
+}
