@@ -4,8 +4,7 @@ import { memo, useRef, useCallback, useEffect } from "react";
 import { ComposableMap, Geographies, Geography, Line, Marker } from "react-simple-maps";
 import { services, type ServiceId } from "@/lib/services";
 import { SUBREGION_PINS, PIN_DIRS } from "@/lib/mapPins";
-
-const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json";
+const GEO_URL = "/countries-50m.json";
 
 const REGION_MAP: Record<string, ServiceId> = {
   "840": "market-entry",

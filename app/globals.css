@@ -88,6 +88,16 @@ body {
   to   { opacity: 1; }
 }
 
+/* Page transition — plays on every route change via app/template.tsx */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.page-enter {
+  animation: pageEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 /* Freeze all per-element paint work during map pan/zoom so the GPU layer stays clean */
 .map-animating .map-region         { transition: none !important; }
 .map-animating .connector-animated { animation:  none !important; }

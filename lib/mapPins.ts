@@ -37,10 +37,10 @@ export const BULLET_ICONS: Record<string, LucideIcon[]> = {
 
 export const SUBREGION_PINS: Record<ServiceId, SubregionPin[]> = {
   "market-entry": [
-    { coordinates: [-120, 47], icon: BarChart2, label: "Market Assessment",  description: "Size the opportunity before committing capital" },
+    { coordinates: [-104, 46], icon: BarChart2, label: "Market Assessment",  description: "Size the opportunity before committing capital" },
     { coordinates: [-75,  42], icon: Map,       label: "GTM Strategy",       description: "Route to market, partners and positioning"    },
-    { coordinates: [-87,  32], icon: Crosshair, label: "Competitive Intel",  description: "Map the landscape and identify how to win"    },
-    { coordinates: [-105, 35], icon: Handshake, label: "Partner ID",         description: "Qualify and engage the right local partners"  },
+    { coordinates: [-80,  28], icon: Crosshair, label: "Competitive Intel",  description: "Map the landscape and identify how to win"    },
+    { coordinates: [-92,  38], icon: Handshake, label: "Partner ID",         description: "Qualify and engage the right local partners"  },
   ],
   "commercial-rep": [
     { coordinates: [10,  51], icon: UserCheck,  label: "Commercial Rep",     description: "Your credible face in the local market"       },
@@ -49,8 +49,8 @@ export const SUBREGION_PINS: Record<ServiceId, SubregionPin[]> = {
     { coordinates: [-4,  40], icon: FileText,   label: "Deal Facilitation",  description: "Support negotiations all the way to close"    },
   ],
   "operational-setup": [
-    { coordinates: [44, 22], icon: Building2, label: "Entity Setup",    description: "Local company formation, end to end"        },
-    { coordinates: [55, 25], icon: MapPin,    label: "Office & Infra",  description: "Physical presence and infra from day one"   },
+    { coordinates: [46, 18], icon: Building2, label: "Entity Setup",    description: "Local company formation, end to end"        },
+    { coordinates: [44, 36], icon: MapPin,    label: "Office & Infra",  description: "Physical presence and infra from day one"   },
     { coordinates: [35, 39], icon: Package,   label: "Vendor Sourcing", description: "Vet, contract and manage local suppliers"   },
     { coordinates: [44, 33], icon: Settings,  label: "Process Design",  description: "Operational workflows built to scale"       },
   ],
@@ -61,7 +61,7 @@ export const SUBREGION_PINS: Record<ServiceId, SubregionPin[]> = {
     { coordinates: [-3.5, 51.5], icon: Shield,    label: "Risk Assessment",   description: "Identify and mitigate regulatory exposure"  },
   ],
   "local-ops": [
-    { coordinates: [18, 44],   icon: Network,       label: "Ops Partnership",   description: "Day-to-day execution as your local team"    },
+    { coordinates: [17, 42],   icon: Network,       label: "Ops Partnership",   description: "Day-to-day execution as your local team"    },
     { coordinates: [23, 44],   icon: Users,         label: "Vendor Mgmt",       description: "Manage and oversee local vendor relations"  },
     { coordinates: [26, 46],   icon: ClipboardList, label: "Project Execution", description: "Coordinate delivery and track milestones"   },
     { coordinates: [16, 45.5], icon: BarChart,      label: "HQ Reporting",      description: "Structured visibility for the parent entity" },
@@ -69,7 +69,7 @@ export const SUBREGION_PINS: Record<ServiceId, SubregionPin[]> = {
   "business-dev": [
     { coordinates: [35,   31.5], icon: Lightbulb, label: "Opportunity ID",      description: "Surface new in-market revenue opportunities" },
     { coordinates: [36.5, 30.5], icon: Link2,     label: "Strategic Alliances", description: "Build partnerships that accelerate growth"   },
-    { coordinates: [35.5, 33.8], icon: UserPlus,  label: "Client Acquisition",  description: "Convert qualified prospects into clients"    },
+    { coordinates: [35.5, 31],   icon: UserPlus,  label: "Client Acquisition",  description: "Convert qualified prospects into clients"    },
     { coordinates: [38,   36],   icon: Globe,     label: "Regional Expansion",  description: "Grow reach into Balkans, SEE and ME"        },
   ],
 };

@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   description:
     "Your operational gateway to Greece and Southeast Europe. Market entry, commercial representation, and operational execution for international companies.",
 };
+import SmoothScroll from "@/components/SmoothScroll";
+import Footer from "@/components/Footer";
+import PageTransition from "@/components/PageTransition";
 
 export default function RootLayout({
   children,
@@ -21,7 +24,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>{children}</body>
+      <body className={`${inter.variable} antialiased`}>
+        <SmoothScroll>
+          <PageTransition>
+            {children}
+          </PageTransition>
+          <Footer />
+        </SmoothScroll>
+      </body>
     </html>
   );
 }

@@ -1,10 +1,14 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect, startTransition } from "react";
+import { useRef, useState, useCallback, useEffect, useLayoutEffect } from "react";
+import { flushSync } from "react-dom";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import WorldMap from "./WorldMap";
+
+gsap.registerPlugin(ScrollTrigger);
 import HeroOverlay from "./HeroOverlay";
-import ServicePanel from "./ServicePanel";
+import ServicePanel, { type ServicePanelHandle } from "./ServicePanel";
 import Header from "./Header";
 import FlyingLogo, { type FlyingLogoHandle } from "./FlyingLogo";
 import { services, type ServiceId } from "@/lib/services";
@@ -88,30 +92,45 @@ function getRegionTransform(
 }
 
 // ── Timing constants ──────────────────────────────────────────────────────────
-const FADE_OUT_DUR  = 0.22;  // how long old content takes to disappear
-const MAP_DUR       = 0.65;  // map pan/zoom duration
-const FADE_IN_DUR   = 0.30;  // how long new content takes to appear
-const FADE_IN_DELAY = 0.52;  // start fading in just before map settles
+const FADE_OUT_DUR  = 0.22;  // hero fade-out
+const MAP_DUR       = 0.90;  // map pan/zoom duration
+const FADE_IN_DUR   = 0.32;  // hero fade-in
+const FADE_IN_DELAY = 0.80;  // hero fade-in delay (= MAP_DUR - 0.10)
 
-export default function ServicesScroll() {
+export default function ServicesScroll({ initialService }: { initialService?: string }) {
+  // ── Compute initial service state (client-only component — window is safe) ─
+  const initialIdx = initialService
+    ? services.findIndex(s => s.id === initialService)
+    : -1;
+  const isRestoring = initialIdx >= 0;
+  const initialPos  = isRestoring
+    ? getRegionTransform(REGION_BBOX[services[initialIdx].id as ServiceId])
+    : null;
+
+  const containerRef    = useRef<HTMLDivElement>(null);
+  const parallaxMapRef  = useRef<HTMLDivElement>(null);
+  const parallaxContentRef = useRef<HTMLDivElement>(null);
   const mapWrapRef      = useRef<HTMLDivElement>(null);
-  const mapTargetRef    = useRef<{ x: string; y: string; scale: number }>({ x: "0%", y: "0%", scale: 1 });
-  const heroWrapRef   = useRef<HTMLDivElement>(null);   // wrapper controlling hero opacity
-  const panelsRef     = useRef<(HTMLDivElement | null)[]>([]);
-  const flyingLogoRef = useRef<FlyingLogoHandle>(null);
-  const logoSlotRef   = useRef<HTMLDivElement>(null);
+  const mapTargetRef    = useRef(initialPos ?? { x: "0%", y: "0%", scale: 1 });
+  const heroWrapRef     = useRef<HTMLDivElement>(null);
+  const panelsRef       = useRef<(HTMLDivElement | null)[]>([]);
+  const panelApiRefs    = useRef<(ServicePanelHandle | null)[]>([]);
+  const flyingLogoRef   = useRef<FlyingLogoHandle>(null);
+  const logoSlotRef     = useRef<HTMLDivElement>(null);
 
   // Current section index: -1 = hero, 0–N = service sections
-  const currentIndexRef = useRef(-1);
+  const currentIndexRef = useRef(isRestoring ? initialIdx : -1);
   const isAnimating     = useRef(false);
-  const heroVisibleRef  = useRef(true);
+  const heroVisibleRef  = useRef(!isRestoring);
 
-  const [activeService, setActiveService]   = useState<ServiceId | null>(null);
+  const [activeService, setActiveService]   = useState<ServiceId | null>(
+    isRestoring ? services[initialIdx].id as ServiceId : null
+  );
   const [hoveredService, setHoveredService] = useState<ServiceId | null>(null);
   const [hoveredBullet, setHoveredBullet]   = useState<number | null>(null);
-  const [heroVisible, setHeroVisible]       = useState(true);
-  const [pinsVisible, setPinsVisible]       = useState(false);
-  const [mapScale, setMapScale]             = useState(1);
+  const [heroVisible, setHeroVisible]       = useState(!isRestoring);
+  const [pinsVisible, setPinsVisible]       = useState(isRestoring);
+  const [mapScale, setMapScale]             = useState(initialPos?.scale ?? 1);
 
   // ── Map animation ─────────────────────────────────────────────────────────
   const animateMapTo = useCallback(
@@ -126,7 +145,7 @@ export default function ServicesScroll() {
       el.classList.add("map-animating");
       gsap.to(el, {
         x: pos.x, y: pos.y, scale: pos.scale,
-        duration: MAP_DUR, ease: "power2.inOut",
+        duration: MAP_DUR, ease: "sine.inOut",
         force3D: true, overwrite: true,
         onComplete: () => {
           el.classList.remove("map-animating");
@@ -150,81 +169,194 @@ export default function ServicesScroll() {
       const prevIndex = currentIndexRef.current;
       currentIndexRef.current = clamped;
 
-      const isGoingToHero  = clamped === -1;
-      const isLeavingHero  = prevIndex === -1;
-
-      const fadeOutEl = prevIndex === -1
-        ? heroWrapRef.current
-        : panelsRef.current[prevIndex];
-      const fadeInEl = clamped === -1
-        ? heroWrapRef.current
-        : panelsRef.current[clamped];
-
-      // Block interactions on the outgoing panel immediately
-      if (fadeOutEl) fadeOutEl.style.pointerEvents = "none";
+      const isGoingToHero = clamped === -1;
+      const isLeavingHero = prevIndex === -1;
 
       // ── Hero visibility bookkeeping ───────────────────────────────────────
-      setPinsVisible(false);            // hide overlay immediately before transition
-      setHoveredBullet(null);           // clear bullet highlight on every transition
+      setPinsVisible(false);
+      setHoveredBullet(null);
 
       if (isLeavingHero) {
         heroVisibleRef.current = false;
         setHeroVisible(false);
         setHoveredService(null);
-        flyingLogoRef.current?.flyToHeader();
+        // flyToHeader is called after flushSync below so GSAP starts on a clean
+        // frame — prevents the frame-drop velocity spike caused by flushSync
+        // blocking the main thread before the first animation frame is painted.
       } else if (isGoingToHero) {
         heroVisibleRef.current = true;
         setHeroVisible(true);
+        // flyToHero likewise deferred to after flushSync below.
+      }
+
+      // ── Outgoing ─────────────────────────────────────────────────────────
+      if (isLeavingHero) {
+        gsap.to(heroWrapRef.current, { opacity: 0, duration: FADE_OUT_DUR, ease: "power2.in" });
+      } else {
+        // Raise incoming above outgoing so its counter rolls in on top of the old one
+        const incomingEl = panelsRef.current[clamped];
+        if (incomingEl) incomingEl.style.zIndex = "12";
+
+        panelApiRefs.current[prevIndex]?.exit();
+        const outEl = panelsRef.current[prevIndex];
+        if (outEl) {
+          outEl.style.pointerEvents = "none";
+          // Hide after incoming counter has fully rolled in.
+          // Do NOT reset incomingEl.style.zIndex here — React already restores it
+          // to "10" via the JSX style prop in the setActiveService re-render that
+          // fires at MAP_DUR. Resetting to "" after that re-render strips the
+          // z-index, causing the panel to drop below parallaxContentRef (z=5)
+          // and making pointer events stop working.
+          setTimeout(() => {
+            outEl.style.opacity = "0";
+          }, Math.round((MAP_DUR + 0.22) * 1000));
+        }
+      }
+
+      // ── Pan / zoom map ────────────────────────────────────────────────────
+      const mapKey = clamped === -1 ? "hero" : services[clamped].id;
+
+      // ── Pre-flight: commit SVG changes synchronously before animation ─────
+      // The GPU compositing layer is created when GSAP starts. If React renders
+      // happen after that point they repaint inside the layer and cause stutter.
+      // flushSync fires here while the hero/service overlay still covers the map,
+      // so the browser can build the layer with already-stable SVG content.
+      if (isLeavingHero && clamped >= 0) {
+        // Set transform NOW — safe because the hero overlay is still covering the map.
+        // For service→service we defer this to onComplete so old pins don't flash
+        // at wrong positions while fading out.
+        mapTargetRef.current = getRegionTransform(REGION_BBOX[mapKey as ServiceId]);
+        // Hero is opaque → safe to update stroke widths + add subregion pins now.
+        flushSync(() => {
+          setMapScale(mapTargetRef.current.scale);
+          setActiveService(services[clamped].id);
+        });
+        // Start logo flight on the first clean frame after the synchronous render.
+        // Starting before flushSync causes GSAP to skip the blocked frames and
+        // jump ahead on resume — visible as a sudden velocity spike at the start.
+        flyingLogoRef.current?.flyToHeader();
+      } else if (isGoingToHero) {
+        // Remove subregion pins while the panel is still exiting (not visible).
+        flushSync(() => setActiveService(null));
         flyingLogoRef.current?.flyToHero();
       }
 
-      // ── Fade out current ──────────────────────────────────────────────────
-      gsap.to(fadeOutEl, { opacity: 0, duration: FADE_OUT_DUR, ease: "power2.in" });
-
-      // ── Pan / zoom map; update activeService when settled ─────────────────
-      const mapKey = clamped === -1 ? "hero" : services[clamped].id;
-
-      // Store target transform so the overlay can compute fixed screen positions
-      mapTargetRef.current = mapKey === "hero"
-        ? { x: "0%", y: "0%", scale: 1.0 }
-        : getRegionTransform(REGION_BBOX[mapKey as ServiceId]);
+      // ── Panel entry — starts 0.10 s before map settles ───────────────────
+      if (clamped >= 0) {
+        gsap.delayedCall(MAP_DUR - 0.10, () => {
+          const inEl = panelsRef.current[clamped];
+          if (inEl) inEl.style.opacity = "1";
+          panelApiRefs.current[clamped]?.enter(isLeavingHero);
+        });
+      }
 
       animateMapTo(mapKey, () => {
-        setMapScale(mapTargetRef.current.scale);
-        startTransition(() => {
-          setActiveService(clamped === -1 ? null : services[clamped].id);
-          setPinsVisible(clamped !== -1);   // show overlay after map settles
-        });
+        if (isGoingToHero) {
+          mapTargetRef.current = { x: "0%", y: "0%", scale: 1.0 };
+          // mapScale(1) is deferred until the hero overlay has fully faded in so
+          // the stroke-width repaint is hidden rather than visible on the map.
+          const hideDelay = Math.round((FADE_IN_DELAY + FADE_IN_DUR - MAP_DUR) * 1000);
+          setTimeout(() => setMapScale(1), hideDelay);
+        } else if (!isLeavingHero) {
+          // Service → service: set transform only NOW so the outgoing pins used
+          // the correct (old) transform during their fade-out — prevents the flash
+          // where old pins jump to wrong positions while still visible.
+          mapTargetRef.current = getRegionTransform(REGION_BBOX[mapKey as ServiceId]);
+          setMapScale(mapTargetRef.current.scale);
+          setActiveService(services[clamped].id);
+          setPinsVisible(true);
+        } else {
+          // Hero → service: mapScale + activeService already committed via flushSync.
+          // Only the HTML overlay still needs to be revealed.
+          setPinsVisible(true);
+        }
       });
 
-      // ── Fade in next (starts just before map finishes) ────────────────────
-      gsap.to(fadeInEl, {
-        opacity: 1,
-        duration: FADE_IN_DUR,
-        ease: "power2.out",
-        delay: FADE_IN_DELAY,
-        onStart: () => {
-          // Hero wrapper stays pointer-events:none so map hovers pass through.
-          // HeroOverlay children receive events via their own pointer-events:auto.
-          if (isGoingToHero && fadeInEl) fadeInEl.style.pointerEvents = "none";
-        },
-        onComplete: () => {
-          isAnimating.current = false;
-        },
-      });
+      // ── Incoming hero fades in on its own timing ──────────────────────────
+      if (isGoingToHero) {
+        gsap.to(heroWrapRef.current, {
+          opacity: 1,
+          duration: FADE_IN_DUR,
+          ease: "power2.out",
+          delay: FADE_IN_DELAY,
+          onStart: () => { if (heroWrapRef.current) heroWrapRef.current.style.pointerEvents = "none"; },
+          onComplete: () => { isAnimating.current = false; },
+        });
+      } else {
+        setTimeout(() => { isAnimating.current = false; }, Math.round((MAP_DUR + 0.40) * 1000));
+      }
     },
     [animateMapTo]
   );
 
+  // ── Set initial GSAP state before first paint ────────────────────────────
+  // useLayoutEffect fires synchronously after commit and before the browser
+  // paints, so GSAP.set calls here are invisible to the user.
+  useLayoutEffect(() => {
+    if (!isRestoring || !initialPos) return;
+    gsap.set(heroWrapRef.current, { opacity: 0 });
+    gsap.set(mapWrapRef.current,  { x: initialPos.x, y: initialPos.y, scale: initialPos.scale });
+    const panelEl = panelsRef.current[initialIdx];
+    if (panelEl) panelEl.style.opacity = "1";
+    // Reveal the container — it starts hidden so nothing flashes before GSAP
+    // sets the correct positions above. React won't override this because the
+    // vDOM still says "hidden" and React only diffs vDOM→vDOM, not vDOM→DOM.
+    if (containerRef.current) containerRef.current.style.visibility = "visible";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Animate panel content in after refs are ready ────────────────────────
+  useEffect(() => {
+    if (!isRestoring) return;
+    flyingLogoRef.current?.snapToHeader();
+    panelApiRefs.current[initialIdx]?.enter(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Parallax exit effect ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!containerRef.current || !parallaxMapRef.current || !parallaxContentRef.current) return;
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom top", 
+        scrub: true,
+        animation: gsap.timeline()
+          .to(parallaxMapRef.current, { y: "25vh", ease: "none" }, 0)
+          .to(parallaxContentRef.current, { y: "12vh", ease: "none" }, 0)
+      });
+    });
+    return () => ctx.revert();
+  }, []);
+
   // ── Wheel → discrete step ─────────────────────────────────────────────────
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
+      // Only engage when this section is pinned at the top of the viewport
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect || Math.abs(rect.top) > 5) return;
+
+      // Unconditionally trap the scrollwheel to prevent accidental unpinning during transition
+      if (isAnimating.current) {
+        e.stopPropagation();
+        e.preventDefault();
+        return;
+      }
+
+      const scrollingDown = e.deltaY > 0;
+      // Release native scroll into the rest of the page only AFTER the final section evaluates and animation is finished:
+      const atBottom = currentIndexRef.current === services.length - 1 && scrollingDown;
+      const atTop    = currentIndexRef.current === -1 && !scrollingDown;
+
+      if (atBottom || atTop) return;
+
+      e.stopPropagation();
       e.preventDefault();
-      if (isAnimating.current) return;
-      goToSection(currentIndexRef.current + (e.deltaY > 0 ? 1 : -1));
+      goToSection(currentIndexRef.current + (scrollingDown ? 1 : -1));
     };
-    window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
+    window.addEventListener("wheel", onWheel, { capture: true, passive: false });
+    return () => window.removeEventListener("wheel", onWheel, { capture: true });
   }, [goToSection]);
 
   // ── Region hover / click (hero mode only) ────────────────────────────────
@@ -245,10 +377,10 @@ export default function ServicesScroll() {
       <FlyingLogo ref={flyingLogoRef} targetRef={logoSlotRef} />
 
       {/* Single fixed-height viewport — no scroll container */}
-      <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
+      <div ref={containerRef} style={{ position: "relative", height: "100vh", overflow: "hidden", background: "var(--dark)", visibility: isRestoring ? "hidden" : "visible" }}>
 
         {/* ── Background map ─────────────────────────────────────────────── */}
-        <div style={{ position: "absolute", inset: 0, background: "var(--dark)", zIndex: 0 }}>
+        <div ref={parallaxMapRef} style={{ position: "absolute", inset: 0, zIndex: 0 }}>
           <div
             ref={mapWrapRef}
             style={{ position: "absolute", inset: "-10%", transformOrigin: "center center", willChange: "transform", backfaceVisibility: "hidden" }}
@@ -270,15 +402,17 @@ export default function ServicesScroll() {
             background: "radial-gradient(ellipse at center, transparent 35%, rgba(17,17,19,0.65) 100%)",
           }} />
 
-          {/* Left gradient mask — appears when leaving hero */}
+          {/* Left gradient mask — opacity-transitioned so the browser composites it on GPU */}
           <div style={{
             position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
-            background: heroVisible
-              ? "transparent"
-              : "linear-gradient(to right, rgba(17,17,19,1) 0%, rgba(17,17,19,0.97) 36%, rgba(17,17,19,0.55) 50%, transparent 100%)",
-            transition: "background 0.6s ease",
+            background: "linear-gradient(to right, rgba(17,17,19,1) 0%, rgba(17,17,19,0.97) 36%, rgba(17,17,19,0.55) 50%, transparent 100%)",
+            opacity: heroVisible ? 0 : 1,
+            transition: "opacity 0.6s ease",
           }} />
         </div>
+
+        {/* ── Content Parallax Layer ────────────────────────────────────── */}
+        <div ref={parallaxContentRef} style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none" }}>
 
         {/* ── Subregion info overlay — HTML, fixed-size, outside map transform */}
         {activeService && (
@@ -361,18 +495,31 @@ export default function ServicesScroll() {
           <HeroOverlay onScrollToServices={() => goToSection(0)} />
         </div>
 
-        {/* ── Service panels (start hidden) ──────────────────────────────── */}
+        </div>
+
+        {/* ── Service panels — outside parallaxContentRef so no pointer-events:none ancestor ── */}
         {services.map((service, i) => (
           <div
             key={service.id}
-            ref={(el) => { panelsRef.current[i] = el; }}
+            ref={(el) => {
+              panelsRef.current[i] = el;
+              // Set opacity imperatively on mount so React doesn't reset it on re-renders
+              if (el && el.style.opacity === "") el.style.opacity = "0";
+            }}
             style={{
               position: "absolute", inset: 0, zIndex: 10,
-              opacity: 0, pointerEvents: "none",
+              pointerEvents: activeService === service.id ? "auto" : "none",
               display: "flex", alignItems: "center",
             }}
           >
-            <ServicePanel service={service} isActive={activeService === service.id} index={i} activeBullet={hoveredBullet} onBulletHover={setHoveredBullet} />
+            <ServicePanel
+              ref={(el) => { panelApiRefs.current[i] = el; }}
+              service={service}
+              isActive={activeService === service.id}
+              index={i}
+              activeBullet={hoveredBullet}
+              onBulletHover={setHoveredBullet}
+            />
           </div>
         ))}
 

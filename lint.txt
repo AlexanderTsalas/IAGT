@@ -1,0 +1,8 @@
+﻿
+C:\Users\dimitris\Documents\GitHub\IAGT\web\components\DistillationSection.tsx
+  23:7  warning  'cx' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  41:9  error    'ctx' is never reassigned. Use 'const' instead  prefer-const
+
+Γ£û 2 problems (1 error, 1 warning)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+
