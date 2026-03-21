@@ -1,30 +1,36 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import gsap from "gsap";
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const ref = useRef<HTMLDivElement>(null);
+  const isFirstMount = useRef(true);
 
-  // useLayoutEffect fires synchronously before the browser paints, so setting
-  // opacity: 0 here prevents any flash of full-opacity content on route change.
-  useLayoutEffect(() => {
+  useEffect(() => {
+    // Skip animation on initial page load — content is immediately visible,
+    // which lets the LCP element paint without waiting for GSAP to evaluate.
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    // Route changes: GSAP is already cached in the browser at this point.
     const el = ref.current;
     if (!el) return;
-    gsap.killTweensOf(el);
-    gsap.fromTo(
-      el,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.4, ease: "power2.out" },
-    );
+    el.style.opacity = "0";
+
+    import("gsap").then(({ default: gsap }) => {
+      if (!ref.current) return;
+      gsap.killTweensOf(ref.current);
+      gsap.fromTo(
+        ref.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.4, ease: "power2.out" },
+      );
+    });
   }, [pathname]);
 
-  // opacity: 0 as inline style covers the initial server-render before JS runs
-  return (
-    <div ref={ref} style={{ opacity: 0 }}>
-      {children}
-    </div>
-  );
+  return <div ref={ref}>{children}</div>;
 }

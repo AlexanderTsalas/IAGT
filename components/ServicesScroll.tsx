@@ -4,9 +4,13 @@ import { useRef, useState, useCallback, useEffect, useLayoutEffect } from "react
 import { flushSync } from "react-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import WorldMap from "./WorldMap";
+import dynamic from "next/dynamic";
 
 gsap.registerPlugin(ScrollTrigger);
+
+// Split D3 + react-simple-maps into their own chunk so they download in
+// parallel with the ServicesScroll bundle and don't inflate its evaluation cost.
+const WorldMap = dynamic(() => import("./WorldMap"), { ssr: false });
 import HeroOverlay from "./HeroOverlay";
 import ServicePanel, { type ServicePanelHandle } from "./ServicePanel";
 import Header from "./Header";
