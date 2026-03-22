@@ -356,6 +356,53 @@ export default function ServicesScroll({ initialService }: { initialService?: st
     return () => window.removeEventListener("wheel", onWheel, { capture: true });
   }, [goToSection]);
 
+  // ── Touch → discrete step (mobile swipe) ────────────────────────────────
+  useEffect(() => {
+    let touchStartY = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      // Only intercept when the section is pinned at the top of the viewport
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect || Math.abs(rect.top) > 5) return;
+      // Prevent native scroll from moving the page while we handle navigation
+      e.preventDefault();
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect || Math.abs(rect.top) > 5) return;
+
+      if (isAnimating.current) return;
+
+      // deltaY > 0 means finger moved up → user is swiping up → scroll down
+      const deltaY = touchStartY - e.changedTouches[0].clientY;
+      const SWIPE_THRESHOLD = 50;
+      if (Math.abs(deltaY) < SWIPE_THRESHOLD) return;
+
+      const swipingDown = deltaY > 0;
+      const atBottom = currentIndexRef.current === services.length - 1 && swipingDown;
+      const atTop    = currentIndexRef.current === -1 && !swipingDown;
+      if (atBottom || atTop) return;
+
+      goToSection(currentIndexRef.current + (swipingDown ? 1 : -1));
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    // passive: false required so we can call preventDefault on touchmove
+    window.addEventListener("touchmove",  onTouchMove,  { capture: true, passive: false });
+    window.addEventListener("touchend",   onTouchEnd,   { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove",  onTouchMove,  { capture: true });
+      window.removeEventListener("touchend",   onTouchEnd);
+    };
+  }, [goToSection]);
+
   // ── Region hover / click (hero mode only) ────────────────────────────────
   const handleRegionHover = useCallback((id: ServiceId | null) => {
     if (id !== null && !heroVisibleRef.current) return;
