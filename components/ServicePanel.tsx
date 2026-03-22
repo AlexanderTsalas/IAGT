@@ -166,34 +166,33 @@ const ServicePanel = forwardRef<ServicePanelHandle, ServicePanelProps>(
 
     return (
       <div
+        className="w-full px-6 md:w-[44%] max-w-[600px] mx-auto md:mx-0 md:ml-[6%] max-h-[60dvh] md:max-h-none overflow-y-auto md:overflow-visible pointer-events-auto"
         style={{
-          width: "44%",
-          maxWidth: "600px",
-          marginLeft: "6%",
           pointerEvents: isActive ? "auto" : "none",
         }}
       >
         {/* Counter (with divider beneath) + Title side by side */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", marginBottom: "1.5rem" }}>
-          <div ref={counterRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-            <span style={{ color: "var(--pink)", fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 300, lineHeight: 1.2 }}>
+        <div className="flex items-start gap-3 md:gap-4 mb-3 md:mb-6">
+          <div ref={counterRef} className="flex flex-col items-center shrink-0">
+            <span className="text-[var(--pink)] text-[1.4rem] md:text-[2.2rem] font-light leading-tight">
               {serviceNumbers[index]}
             </span>
-            <div style={{ width: "32px", height: "1px", background: "rgba(255,31,142,0.35)", marginTop: "0.5rem" }} />
+            <div className="w-[24px] md:w-[32px] h-[1px] bg-[#ff1f8e]/35 mt-1 md:mt-2" />
           </div>
-          <h2 ref={titleRef} style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 300, color: "white", lineHeight: 1.2, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <h2 ref={titleRef} className="text-[1.35rem] md:text-[2.2rem] font-light text-white leading-tight m-0 line-clamp-2">
             {service.title}
           </h2>
         </div>
 
         {/* Description */}
-        <p ref={descRef} style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.925rem", lineHeight: 1.75, fontWeight: 300, margin: "0 0 1.25rem" }}>
+        <p ref={descRef} className="text-white/50 text-[0.8rem] md:text-[0.925rem] leading-[1.6] md:leading-[1.75] font-light m-0 mb-3 md:mb-5">
           {descriptions[service.id] ?? service.fullDescription}
         </p>
 
         {/* Bullet list */}
         <ul
-          style={{ listStyle: "none", padding: 0, margin: "0 0 2rem", pointerEvents: isActive ? "auto" : "none" }}
+          className="list-none p-0 m-0 mb-4 md:mb-8"
+          style={{ pointerEvents: isActive ? "auto" : "none" }}
           onMouseLeave={() => onBulletHover(null)}
         >
           {bullets_.map((b, i) => {
@@ -203,34 +202,23 @@ const ServicePanel = forwardRef<ServicePanelHandle, ServicePanelProps>(
               <li
                 key={i}
                 ref={(el) => { itemRefs.current[i] = el; }}
+                className="flex items-center gap-3 md:gap-4 px-3 py-2.5 md:px-[1.2rem] md:py-[1.1rem] -mb-[1px] border-t border-b border-[#ff1f8e]/20 text-[0.85rem] md:text-[1.15rem] leading-snug cursor-pointer transition-colors duration-200"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "16px",
-                  padding: "1.1rem 1.2rem",
-                  marginBottom: "-1px",
-                  borderTop: "1px solid rgba(255,31,142,0.2)",
-                  borderBottom: "1px solid rgba(255,31,142,0.2)",
                   background: hovered ? "rgba(255,31,142,0.06)" : "transparent",
                   color: hovered ? "rgba(255,255,255,0.96)" : "rgba(255,255,255,0.72)",
-                  fontSize: "1.15rem",
-                  lineHeight: 1.5,
-                  cursor: "pointer",
-                  transition: "background 0.18s ease, color 0.18s ease",
                   pointerEvents: isActive ? "auto" : "none",
                 }}
                 onMouseEnter={() => onBulletHover(i)}
                 onClick={() => router.push(`/services/${service.id}?item=${i}`)}
               >
-                {Icon && <Icon size={22} color="var(--pink)" strokeWidth={1.5} style={{ flexShrink: 0 }} />}
-                <span style={{ flex: 1 }}>{b}</span>
+                {Icon && <Icon className="w-4 h-4 md:w-[22px] md:h-[22px] shrink-0 text-[var(--pink)]" strokeWidth={1.5} />}
+                <span className="flex-1">{b}</span>
                 {/* Arrow — right end, rotates diagonally on hover */}
                 <svg
-                  width="12" height="12" viewBox="0 0 12 12" fill="none"
+                  className="w-3 h-3 md:w-3 md:h-3 shrink-0 transition-transform duration-200"
+                  viewBox="0 0 12 12" fill="none"
                   style={{
-                    flexShrink: 0,
                     transform: hovered ? "rotate(45deg)" : "rotate(0deg)",
-                    transition: "transform 0.2s ease",
                     opacity: hovered ? 1 : 0.45,
                   }}
                 >
@@ -245,20 +233,8 @@ const ServicePanel = forwardRef<ServicePanelHandle, ServicePanelProps>(
         <Link
           ref={ctaRef}
           href={`/services/${service.id}`}
-          style={{
-            display: "inline-block",
-            background: "transparent",
-            border: "1px solid rgba(255,31,142,0.4)",
-            color: "var(--pink)",
-            padding: "10px 24px",
-            fontSize: "0.8rem",
-            letterSpacing: "0.1em",
-            borderRadius: "4px",
-            cursor: "pointer",
-            textDecoration: "none",
-            transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease",
-            pointerEvents: isActive ? "auto" : "none",
-          }}
+          className="inline-block bg-transparent border border-[#ff1f8e]/40 text-[var(--pink)] px-5 py-2 md:px-6 md:py-2.5 text-[0.7rem] md:text-[0.8rem] tracking-widest rounded transition-all duration-200 no-underline"
+          style={{ pointerEvents: isActive ? "auto" : "none" }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(255,31,142,0.1)";
             e.currentTarget.style.borderColor = "var(--pink)";

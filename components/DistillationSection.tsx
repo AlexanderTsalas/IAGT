@@ -14,7 +14,7 @@ import {
   Handshake, ChevronDown, X,
 } from "lucide-react";
 import AppointmentCalendar from "./AppointmentCalendar";
-import { LogoMark } from "./FlyingLogo";
+import { LogoMark } from "./Header";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -220,6 +220,8 @@ export default function DistillationSection() {
   const industriesTextRef = useRef<HTMLDivElement>(null);
 
   // ── New refs ──────────────────────────────────────────────────────────────
+  const mobLeftDividerRef    = useRef<HTMLDivElement>(null);
+  const mobRightDividerRef   = useRef<HTMLDivElement>(null);
   const logoRef              = useRef<HTMLDivElement>(null);
   const centerIconsRef       = useRef<(HTMLDivElement | null)[]>([]);
   const leftPanelRefs        = useRef<(HTMLDivElement | null)[]>([]);
@@ -283,6 +285,15 @@ export default function DistillationSection() {
       const len = edge.getTotalLength();
       tl.to(edge, { strokeDashoffset: len, duration: 0.4, ease: "power2.inOut" }, 0.1);
     });
+
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      const centerEdges = [0, 1, 4, 5].map(idx => edgeRefs.current[idx]).filter((el): el is SVGPathElement => el !== null);
+      centerEdges.forEach(edge => {
+        tl.to(edge, { strokeDashoffset: edge.getTotalLength(), duration: 0.4, ease: "power2.inOut" }, 0.1);
+      });
+      tl.to([mobLeftDividerRef.current, mobRightDividerRef.current], { scaleX: 1, duration: 0.5, ease: "power2.out" }, 0.4);
+    }
 
     // Phase 3 — logo fades out, selected node fades out
     tl.to(logoRef.current, { opacity: 0, duration: 0.3 }, 0.2);
@@ -348,6 +359,15 @@ export default function DistillationSection() {
         if (!edge) return;
         backTl.to(edge, { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, 0);
       });
+
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        const centerEdges = [0, 1, 4, 5].map(idx => edgeRefs.current[idx]).filter((el): el is SVGPathElement => el !== null);
+        centerEdges.forEach(edge => {
+          backTl.to(edge, { strokeDashoffset: 0, duration: 0.4, ease: "power2.inOut" }, 0);
+        });
+        backTl.to([mobLeftDividerRef.current, mobRightDividerRef.current], { scaleX: 0, duration: 0.3, ease: "power2.inOut" }, 0);
+      }
       backTl.to([inSixRef.current, industriesTextRef.current], { opacity: 1, duration: 0.3 }, 0.15);
       return;
     }
@@ -467,6 +487,15 @@ export default function DistillationSection() {
       if (!edge) return;
       ctaTl.to(edge, { strokeDashoffset: edge.getTotalLength(), duration: 0.4, ease: "power2.inOut" }, 0.1);
     });
+
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      const centerEdges = [0, 1, 4, 5].map(idx => edgeRefs.current[idx]).filter((el): el is SVGPathElement => el !== null);
+      centerEdges.forEach(edge => {
+        ctaTl.to(edge, { strokeDashoffset: edge.getTotalLength(), duration: 0.4, ease: "power2.inOut" }, 0.1);
+      });
+      ctaTl.to([mobLeftDividerRef.current, mobRightDividerRef.current], { scaleX: 1, duration: 0.5, ease: "power2.out" }, 0.4);
+    }
     ctaTl.to(logoRef.current, { opacity: 0, duration: 0.3 }, 0.2);
     ctaTl.to(ctaHandshakeRef.current, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }, 0.5);
     ctaTl.fromTo(ctaPanelLeftRef.current,  { opacity: 0, x: -28 }, { opacity: 1, x: 0, duration: 0.55 }, 0.75);
@@ -485,6 +514,7 @@ export default function DistillationSection() {
     leftPanelRefs.current.forEach(el  => el && gsap.set(el, { opacity: 0 }));
     rightPanelRefs.current.forEach(el => el && gsap.set(el, { opacity: 0 }));
     gsap.set(ctaHandshakeRef.current, { opacity: 0, scale: 0.5 });
+    gsap.set([mobLeftDividerRef.current, mobRightDividerRef.current], { scaleX: 0 });
     // CTA panels are not mounted yet — no gsap.set needed for them
 
     const ctx = gsap.context(() => {
@@ -758,17 +788,12 @@ export default function DistillationSection() {
       {/* ── Apparatus Area ── */}
       <div
         ref={apparatusRef}
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: `${vbW}px`,
-          aspectRatio: `${vbW} / ${vbH}`,
-          flexShrink: 0,
-        }}
+        className="w-full max-w-[1000px] shrink-0 aspect-[3/4] md:aspect-[1000/600] relative mx-auto"
       >
         {/* ── SVG: hourglass + edges ── */}
         <svg
           viewBox={`0 0 ${vbW} ${vbH}`}
+          preserveAspectRatio="none"
           style={{
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
@@ -844,26 +869,19 @@ export default function DistillationSection() {
             <div
               key={`source-${i}`}
               ref={el => { sourceRefs.current[i] = el; }}
+              className="absolute flex flex-col items-center z-[2] opacity-70 grayscale"
               style={{
-                position: "absolute",
                 left: `${(SOURCE_X[i] / vbW) * 100}%`,
                 top:  `${(SOURCE_Y   / vbH) * 100}%`,
                 transform: "translate(-50%, -50%)",
-                display: "flex", flexDirection: "column", alignItems: "center",
-                gap: "12px", zIndex: 2,
-                filter: "grayscale(100%) opacity(0.7)",
               }}
             >
-              <div style={{
-                width: "64px", height: "64px", borderRadius: "16px",
-                background: "rgba(255,255,255,0.05)",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                <Icon size={32} color="rgba(255,255,255,0.7)" strokeWidth={1.5} />
+              <div className="w-[42px] h-[42px] md:w-[64px] md:h-[64px] bg-white/5 rounded-xl md:rounded-2xl flex justify-center items-center shrink-0">
+                <Icon className="w-[20px] h-[20px] md:w-[32px] md:h-[32px] text-white/70" strokeWidth={1.5} />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "2px", whiteSpace: "nowrap" }}>
-                <span style={{ fontSize: "1.25rem", fontWeight: 300, color: "rgba(255,255,255,0.6)" }}>{card.top}</span>
-                <span style={{ fontSize: "0.8rem", letterSpacing: "0.12em", color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>{card.sub}</span>
+              <div className="flex flex-col items-center text-center gap-1 whitespace-normal w-[85px] md:w-auto mt-2 md:mt-3">
+                <span className="text-[0.75rem] md:text-[1.25rem] font-light text-white/60 leading-tight">{card.top}</span>
+                <span className="text-[0.55rem] md:text-[0.8rem] tracking-widest text-[var(--pink)] uppercase mt-1">{card.sub}</span>
               </div>
             </div>
           );
@@ -876,28 +894,19 @@ export default function DistillationSection() {
             <div
               key={`target-${i}`}
               ref={el => { targetRefs.current[i] = el; }}
+              className="absolute flex flex-col items-center z-[3]"
               style={{
-                position: "absolute",
                 left: `${(TARGET_X[i] / vbW) * 100}%`,
                 top:  `${(TARGET_Y   / vbH) * 100}%`,
                 transform: "translate(-50%, -50%)",
-                display: "flex", flexDirection: "column", alignItems: "center",
-                gap: "12px", zIndex: 3,
               }}
             >
-              <div style={{
-                width: "72px", height: "72px", borderRadius: "20px",
-                background: "linear-gradient(135deg, rgba(255,31,142,0.15) 0%, rgba(255,31,142,0.03) 100%)",
-                border: "1px solid var(--pink)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 8px 32px rgba(255,31,142,0.12)",
-                backdropFilter: "blur(4px)", flexShrink: 0,
-              }}>
-                <Icon size={38} color="white" strokeWidth={1.5} />
+              <div className="w-[48px] h-[48px] md:w-[72px] md:h-[72px] rounded-xl md:rounded-2xl flex justify-center items-center shrink-0 bg-gradient-to-br from-[#ff1f8e]/15 to-transparent border border-[var(--pink)] shadow-lg backdrop-blur">
+                <Icon className="w-[22px] h-[22px] md:w-[38px] md:h-[38px] text-white" strokeWidth={1.5} />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "2px", whiteSpace: "nowrap" }}>
-                <span style={{ fontSize: "1.35rem", fontWeight: 400, color: "white" }}>{card.top}</span>
-                <span style={{ fontSize: "0.85rem", letterSpacing: "0.12em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500 }}>{card.sub}</span>
+              <div className="flex flex-col items-center text-center gap-1 whitespace-normal w-[90px] md:w-auto mt-2 md:mt-3">
+                <span className="text-[0.8rem] md:text-[1.35rem] font-normal text-white leading-tight">{card.top}</span>
+                <span className="text-[0.55rem] md:text-[0.85rem] tracking-widest text-[var(--pink)] uppercase font-medium mt-1">{card.sub}</span>
               </div>
             </div>
           );
@@ -914,42 +923,31 @@ export default function DistillationSection() {
               onClick={() => handleNodeClick(i)}
               onMouseEnter={() => setHoveredNode(i)}
               onMouseLeave={() => setHoveredNode(null)}
+              className="absolute flex flex-col items-center z-[4] cursor-pointer transition-transform duration-200"
               style={{
-                position: "absolute",
                 left: `${(nx / vbW) * 100}%`,
                 top:  `${(ny / vbH) * 100}%`,
-                transform: hoveredNode === i
-                  ? "translate(-50%, -50%) scale(1.12)"
-                  : "translate(-50%, -50%)",
-                display: "flex", flexDirection: "column", alignItems: "center",
-                gap: "10px", zIndex: 4,
-                cursor: "pointer",
-                transition: "transform 0.22s ease",
+                transform: hoveredNode === i ? "translate(-50%, -50%) scale(1.12)" : "translate(-50%, -50%)",
               }}
             >
-              <div style={{
-                width: "76px", height: "76px", borderRadius: "50%",
-                background: hoveredNode === i
-                  ? "rgba(255,31,142,0.16)"
-                  : "rgba(255,31,142,0.07)",
-                border: hoveredNode === i
-                  ? "1px solid rgba(255,31,142,0.8)"
-                  : "1px solid rgba(255,31,142,0.35)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: hoveredNode === i
-                  ? "0 0 36px rgba(255,31,142,0.5), inset 0 0 14px rgba(255,31,142,0.1)"
-                  : "0 0 22px rgba(255,31,142,0.14)",
-                transition: "background 0.22s, border 0.22s, box-shadow 0.22s",
-              }}>
-                <Icon size={34} color="white" strokeWidth={1.5} />
+              <div className="w-[42px] h-[42px] md:w-[76px] md:h-[76px] rounded-full flex justify-center items-center shrink-0 transition-all duration-200"
+                style={{
+                  background: hoveredNode === i
+                    ? "rgba(255,31,142,0.16)"
+                    : "rgba(255,31,142,0.07)",
+                  border: hoveredNode === i
+                    ? "1px solid rgba(255,31,142,0.8)"
+                    : "1px solid rgba(255,31,142,0.35)",
+                  boxShadow: hoveredNode === i
+                    ? "0 0 36px rgba(255,31,142,0.5), inset 0 0 14px rgba(255,31,142,0.1)"
+                    : "0 0 22px rgba(255,31,142,0.14)",
+                }}>
+                <Icon className="w-[18px] h-[18px] md:w-[34px] md:h-[34px] text-white" strokeWidth={1.5} />
               </div>
-              <span style={{
-                fontSize: "0.75rem", letterSpacing: "0.18em",
-                color: hoveredNode === i ? "white" : "rgba(255,255,255,0.65)",
-                textTransform: "uppercase",
-                fontWeight: 400, whiteSpace: "nowrap",
-                transition: "color 0.22s",
-              }}>
+              <span className="text-[0.55rem] md:text-[0.75rem] tracking-[0.18em] uppercase whitespace-normal text-center max-w-[70px] md:max-w-none mt-2 md:mt-3 transition-colors duration-200"
+                style={{
+                  color: hoveredNode === i ? "white" : "rgba(255,255,255,0.65)",
+                }}>
                 {ind.name}
               </span>
             </div>
@@ -957,38 +955,42 @@ export default function DistillationSection() {
         })}
 
         {/* ── TOP LABEL: four states ── */}
-        <div ref={inSixRef} style={{ position: "absolute", left: "50%", top: `${(IN_SIX_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 5, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>In Six</span>
+        <div ref={inSixRef} className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[5] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none" style={{ top: `${(IN_SIX_Y / vbH) * 100}%` }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">In Six</span>
         </div>
         {/* State 2: industry name (selected, not hovering) */}
-        <div style={{ position: "absolute", left: "50%", top: `${(IN_SIX_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 6, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none", opacity: isSelected && !ctaActive && !centerHovered ? 1 : 0, transition: "opacity 0.2s", whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>{selectedIndustry !== null ? INDUSTRIES[selectedIndustry].name : ""}</span>
+        <div className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[6] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none transition-opacity duration-200 whitespace-nowrap" style={{ top: `${(IN_SIX_Y / vbH) * 100}%`, opacity: isSelected && !ctaActive && !centerHovered ? 1 : 0 }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">{selectedIndustry !== null ? INDUSTRIES[selectedIndustry].name : ""}</span>
         </div>
         {/* State 3: Return (selected, hovering) */}
-        <div style={{ position: "absolute", left: "50%", top: `${(IN_SIX_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 7, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none", opacity: isSelected && !ctaActive && centerHovered ? 1 : 0, transition: "opacity 0.2s", whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>Return</span>
+        <div className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[7] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none transition-opacity duration-200 whitespace-nowrap" style={{ top: `${(IN_SIX_Y / vbH) * 100}%`, opacity: isSelected && !ctaActive && centerHovered ? 1 : 0 }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">Return</span>
         </div>
         {/* State 4: "The Window" (CTA active) */}
-        <div style={{ position: "absolute", left: "50%", top: `${(IN_SIX_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 8, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none", opacity: ctaActive ? 1 : 0, transition: "opacity 0.2s", whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>The Window</span>
+        <div className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[8] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none transition-opacity duration-200 whitespace-nowrap" style={{ top: `${(IN_SIX_Y / vbH) * 100}%`, opacity: ctaActive ? 1 : 0 }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">The Window</span>
         </div>
 
         {/* ── BOTTOM LABEL: four states ── */}
-        <div ref={industriesTextRef} style={{ position: "absolute", left: "50%", top: `${(INDUSTRIES_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 5, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>Industries</span>
+        <div ref={industriesTextRef} className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[5] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none" style={{ top: `${(INDUSTRIES_Y / vbH) * 100}%` }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">Industries</span>
         </div>
         {/* State 2: "Industry" (selected, not hovering) */}
-        <div style={{ position: "absolute", left: "50%", top: `${(INDUSTRIES_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 6, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none", opacity: isSelected && !ctaActive && !centerHovered ? 1 : 0, transition: "opacity 0.2s", whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>Industry</span>
+        <div className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[6] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none transition-opacity duration-200 whitespace-nowrap" style={{ top: `${(INDUSTRIES_Y / vbH) * 100}%`, opacity: isSelected && !ctaActive && !centerHovered ? 1 : 0 }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">Industry</span>
         </div>
         {/* State 3: "View" (selected, hovering) */}
-        <div style={{ position: "absolute", left: "50%", top: `${(INDUSTRIES_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 7, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none", opacity: isSelected && !ctaActive && centerHovered ? 1 : 0, transition: "opacity 0.2s", whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>View</span>
+        <div className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[7] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none transition-opacity duration-200 whitespace-nowrap" style={{ top: `${(INDUSTRIES_Y / vbH) * 100}%`, opacity: isSelected && !ctaActive && centerHovered ? 1 : 0 }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">View</span>
         </div>
         {/* State 4: "Is Open" (CTA active) */}
-        <div style={{ position: "absolute", left: "50%", top: `${(INDUSTRIES_Y / vbH) * 100}%`, transform: "translateX(-50%)", zIndex: 8, background: "var(--dark)", padding: "2px 14px", pointerEvents: "none", opacity: ctaActive ? 1 : 0, transition: "opacity 0.2s", whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: "0.65rem", letterSpacing: "0.32em", color: "white", textTransform: "uppercase" }}>Is Open</span>
+        <div className="hidden md:block absolute left-1/2 -translate-x-1/2 z-[8] bg-[var(--dark)] px-3.5 py-0.5 pointer-events-none transition-opacity duration-200 whitespace-nowrap" style={{ top: `${(INDUSTRIES_Y / vbH) * 100}%`, opacity: ctaActive ? 1 : 0 }}>
+          <span className="text-[0.65rem] tracking-[0.32em] text-white uppercase">Is Open</span>
         </div>
+
+        {/* ── Mobile Horizontal Separators ── */}
+        <div ref={mobLeftDividerRef} className="absolute top-[50%] left-[5%] right-[calc(50%+40px)] h-[1.5px] bg-gradient-to-l from-[#ff1f8e] to-transparent z-[5] md:hidden scale-x-0 origin-right rounded-full mix-blend-screen" style={{ transform: "translateY(-50%)" }} />
+        <div ref={mobRightDividerRef} className="absolute top-[50%] left-[calc(50%+40px)] right-[5%] h-[1.5px] bg-gradient-to-r from-[#ff1f8e] to-transparent z-[5] md:hidden scale-x-0 origin-left rounded-full mix-blend-screen" style={{ transform: "translateY(-50%)" }} />
 
         {/* ── Central Logo Circle ── */}
         <div
@@ -996,41 +998,33 @@ export default function DistillationSection() {
           onMouseEnter={() => { if (isCenterInteractive) setCenterHovered(true); }}
           onMouseLeave={() => setCenterHovered(false)}
           onClick={() => { if (isSelected && !ctaActive) handleBackClick(); }}
+          className="w-[64px] h-[64px] md:w-[110px] md:h-[110px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--dark)] border-2 border-[#ff1f8e]/60 rounded-full flex justify-center items-center shadow-[0_0_30px_5px_rgba(255,31,142,0.3)] z-10 transition-shadow duration-200"
           style={{
-            position: "absolute", left: "50%", top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "110px", height: "110px", borderRadius: "50%",
-            background: "var(--dark)",
-            border: "2px solid rgba(255,31,142,0.6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 30px 5px rgba(255,31,142,0.3)",
-            zIndex: 10,
             cursor: isCenterInteractive ? "pointer" : "default",
-            transition: "box-shadow 0.2s",
             ...(isCenterInteractive && centerHovered ? {
               boxShadow: "0 0 40px 8px rgba(255,31,142,0.5)",
-              border: "2px solid rgba(255,31,142,0.9)",
+              borderColor: "rgba(255,31,142,0.9)",
             } : {}),
           }}
         >
           {/* LogoMark */}
-          <div ref={logoRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <LogoMark size={56} />
+          <div ref={logoRef} className="absolute inset-0 flex items-center justify-center">
+            <LogoMark size={56} className="w-[32px] md:w-[56px] h-auto" />
           </div>
 
           {/* Industry icons — GSAP-controlled per index */}
           {INDUSTRIES.map((ind, i) => {
             const Icon = ind.icon;
             return (
-              <div key={`center-icon-${i}`} ref={el => { centerIconsRef.current[i] = el; }} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon size={44} color="white" strokeWidth={1.3} />
+              <div key={`center-icon-${i}`} ref={el => { centerIconsRef.current[i] = el; }} className="absolute inset-0 flex items-center justify-center">
+                <Icon className="w-[28px] md:w-[44px] h-[28px] md:h-[44px] text-white" strokeWidth={1.3} />
               </div>
             );
           })}
 
           {/* Handshake icon — GSAP-controlled, appears in CTA state */}
-          <div ref={ctaHandshakeRef} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Handshake size={44} color="white" strokeWidth={1.3} />
+          <div ref={ctaHandshakeRef} className="absolute inset-0 flex items-center justify-center">
+            <Handshake className="w-[28px] md:w-[44px] h-[28px] md:h-[44px] text-white" strokeWidth={1.3} />
           </div>
 
           {/* Back arrow — selected industry state hover */}
@@ -1055,54 +1049,29 @@ export default function DistillationSection() {
           {/* Left panel — Market Expertise */}
           <div
             ref={el => { leftPanelRefs.current[i] = el; }}
-            style={{
-              position: "absolute",
-              left: "3%", right: "calc(50% + 90px)",
-              top: 0, bottom: 0,
-              display: "flex", flexDirection: "column", justifyContent: "center",
-              paddingRight: "40px",
-              pointerEvents: "none",
-            }}
+            className="absolute left-[5%] right-[5%] top-[75px] bottom-[calc(50%+40px)] md:left-[3%] md:right-[calc(50%+90px)] md:top-0 md:bottom-0 flex flex-col justify-end md:justify-center pr-0 md:pr-10 pointer-events-none"
           >
             {/* Panel header */}
-            <div style={{ marginBottom: "1.6rem" }}>
-              <span style={{
-                fontSize: "0.72rem", letterSpacing: "0.28em",
-                color: "var(--pink)", textTransform: "uppercase", fontWeight: 500,
-                display: "block", marginBottom: "0.65rem",
-              }}>
+            <div className="mb-4 md:mb-6">
+              <span className="text-[0.6rem] md:text-[0.72rem] tracking-[0.28em] text-[var(--pink)] uppercase font-medium block mb-2 md:mb-2.5">
                 Market Expertise
               </span>
-              <h3 style={{
-                fontSize: "clamp(1.5rem, 2.2vw, 2rem)", fontWeight: 300,
-                color: "white", margin: "0 0 0.8rem", lineHeight: 1.2,
-              }}>
+              <h3 className="text-[1.35rem] md:text-[2rem] font-light text-white m-0 mb-2 md:mb-3 leading-tight line-clamp-2">
                 {ind.name} Market Knowledge
               </h3>
-              <p style={{
-                fontSize: "0.95rem", fontWeight: 300, lineHeight: 1.65,
-                color: "rgba(255,255,255,0.5)", margin: 0,
-              }}>
+              <p className="text-[0.8rem] md:text-[0.95rem] font-light leading-[1.6] text-white/50 m-0 line-clamp-3">
                 Hands-on positioning and strategic insight developed through direct engagement in the Greek and regional market.
               </p>
             </div>
 
             {/* List items — ServicePanel style */}
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            <ul className="list-none p-0 m-0 overflow-y-auto pr-2 md:pr-0 md:overflow-visible min-h-[50px]">
               {INDUSTRY_CONTENT[i].expertise.map((item, j) => (
                 <li
                   key={j}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "14px",
-                    padding: "1.1rem 1rem",
-                    marginBottom: "-1px",
-                    borderTop: "1px solid rgba(255,31,142,0.2)",
-                    borderBottom: "1px solid rgba(255,31,142,0.2)",
-                    fontSize: "1.1rem", fontWeight: 300, lineHeight: 1.5,
-                    color: "rgba(255,255,255,0.75)",
-                  }}
+                  className="flex items-center gap-3 px-2 md:px-4 py-2 md:py-3.5 -mb-px border-t border-b border-[#ff1f8e]/20 text-[0.85rem] md:text-[1.1rem] font-light leading-snug text-white/75"
                 >
-                  <ChevronRight size={17} color="var(--pink)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <ChevronRight className="w-[14px] md:w-[17px] h-auto text-[var(--pink)] shrink-0" strokeWidth={1.5} />
                   {item}
                 </li>
               ))}
@@ -1112,54 +1081,29 @@ export default function DistillationSection() {
           {/* Right panel — Key Connections */}
           <div
             ref={el => { rightPanelRefs.current[i] = el; }}
-            style={{
-              position: "absolute",
-              left: "calc(50% + 90px)", right: "3%",
-              top: 0, bottom: 0,
-              display: "flex", flexDirection: "column", justifyContent: "center",
-              paddingLeft: "40px",
-              pointerEvents: "none",
-            }}
+            className="absolute left-[5%] right-[5%] top-[calc(50%+40px)] bottom-[5%] md:left-[calc(50%+90px)] md:right-[3%] md:top-0 md:bottom-0 flex flex-col justify-start md:justify-center pl-0 md:pl-10 pointer-events-none"
           >
             {/* Panel header */}
-            <div style={{ marginBottom: "1.6rem" }}>
-              <span style={{
-                fontSize: "0.72rem", letterSpacing: "0.28em",
-                color: "var(--pink)", textTransform: "uppercase", fontWeight: 500,
-                display: "block", marginBottom: "0.65rem",
-              }}>
+            <div className="mb-4 md:mb-6">
+              <span className="text-[0.6rem] md:text-[0.72rem] tracking-[0.28em] text-[var(--pink)] uppercase font-medium block mb-2 md:mb-2.5">
                 Key Connections
               </span>
-              <h3 style={{
-                fontSize: "clamp(1.5rem, 2.2vw, 2rem)", fontWeight: 300,
-                color: "white", margin: "0 0 0.8rem", lineHeight: 1.2,
-              }}>
+              <h3 className="text-[1.35rem] md:text-[2rem] font-light text-white m-0 mb-2 md:mb-3 leading-tight line-clamp-2">
                 Operational Network
               </h3>
-              <p style={{
-                fontSize: "0.95rem", fontWeight: 300, lineHeight: 1.65,
-                color: "rgba(255,255,255,0.5)", margin: 0,
-              }}>
+              <p className="text-[0.8rem] md:text-[0.95rem] font-light leading-[1.6] text-white/50 m-0 line-clamp-2">
                 Established relationships with the institutions and businesses that drive decisions in this sector.
               </p>
             </div>
 
             {/* List items — ServicePanel style */}
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            <ul className="list-none p-0 m-0 overflow-y-auto pr-2 md:pr-0 md:overflow-visible min-h-[50px]">
               {INDUSTRY_CONTENT[i].connections.map((item, j) => (
                 <li
                   key={j}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "14px",
-                    padding: "1.1rem 1rem",
-                    marginBottom: "-1px",
-                    borderTop: "1px solid rgba(255,31,142,0.2)",
-                    borderBottom: "1px solid rgba(255,31,142,0.2)",
-                    fontSize: "1.1rem", fontWeight: 300, lineHeight: 1.5,
-                    color: "rgba(255,255,255,0.75)",
-                  }}
+                  className="flex items-center gap-3 px-2 md:px-4 py-2 md:py-3.5 -mb-px border-t border-b border-[#ff1f8e]/20 text-[0.85rem] md:text-[1.1rem] font-light leading-snug text-white/75"
                 >
-                  <Network size={17} color="var(--pink)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <Network className="w-[14px] md:w-[17px] h-auto text-[var(--pink)] shrink-0" strokeWidth={1.5} />
                   {item}
                 </li>
               ))}
@@ -1191,65 +1135,55 @@ export default function DistillationSection() {
       {ctaMounted && <>
       <div
         ref={ctaPanelLeftRef}
-        style={{
-          position: "absolute",
-          left: "3%", right: "calc(50% + 90px)",
-          top: 0, bottom: 0,
-          display: "flex", flexDirection: "column", justifyContent: "center",
-          paddingRight: "40px", zIndex: 8, pointerEvents: "none",
-        }}
+        className="absolute left-[5%] right-[5%] top-[75px] bottom-[calc(50%+40px)] md:left-[3%] md:right-[calc(50%+90px)] md:top-0 md:bottom-0 flex flex-col justify-end md:justify-center pr-0 md:pr-10 z-[8] pointer-events-auto"
       >
-        <span style={{ fontSize: "0.72rem", letterSpacing: "0.28em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>Market Context</span>
-        <h2 style={{ fontSize: "clamp(1.8rem, 3vw, 2.6rem)", fontWeight: 300, color: "white", margin: "0 0 0.6rem", lineHeight: 1.15, whiteSpace: "nowrap" }}>The Window Is Open</h2>
-        <p style={{ fontSize: "0.95rem", fontWeight: 300, lineHeight: 1.65, color: "rgba(255,255,255,0.5)", margin: "0 0 2rem" }}>
+        <span className="text-[0.55rem] md:text-[0.72rem] tracking-[0.28em] text-[var(--pink)] uppercase font-medium block mb-1 md:mb-2 text-center md:text-left">
+          Market Context
+        </span>
+        <h2 className="text-[1.35rem] md:text-[clamp(1.8rem,3vw,2.6rem)] font-light text-white m-0 mb-1 md:mb-2.5 leading-tight whitespace-nowrap text-center md:text-left">
+          The Window Is Open
+        </h2>
+        <p className="text-[0.75rem] md:text-[0.95rem] font-light leading-[1.5] text-white/50 m-0 mb-2 md:mb-8 text-center md:text-left line-clamp-3">
           Greece is attracting record foreign investment. The companies entering now are claiming the positions that matter.
         </p>
 
         {/* Metric counters */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.2rem", marginBottom: "2.5rem" }}>
+        <div className="grid grid-cols-2 gap-2 md:gap-5 mb-3 md:mb-10">
           {METRICS.map((m, i) => (
-            <div key={i} style={{ borderTop: "1px solid rgba(255,31,142,0.2)", paddingTop: "1rem" }}>
-              <div style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.4rem)", fontWeight: 200, color: "white", lineHeight: 1, marginBottom: "0.35rem" }}>
+            <div key={i} className="border-t border-[#ff1f8e]/20 pt-1.5 md:pt-4">
+              <div className="text-[1.2rem] md:text-[clamp(1.8rem,2.8vw,2.4rem)] font-extralight text-white leading-none mb-0.5 md:mb-1 text-center md:text-left">
                 <span ref={el => { metricCounterRefs.current[i] = el; }}>{m.prefix}0{m.suffix}</span>
               </div>
-              <div style={{ fontSize: "0.75rem", letterSpacing: "0.1em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500, marginBottom: "0.3rem" }}>{m.label}</div>
-              <div style={{ fontSize: "0.8rem", fontWeight: 300, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{m.sublabel}</div>
+              <div className="text-[0.5rem] md:text-[0.75rem] tracking-[0.1em] text-[var(--pink)] uppercase font-medium mb-1 text-center md:text-left">{m.label}</div>
+              <div className="text-[0.65rem] md:text-[0.8rem] font-light text-white/40 leading-[1.4] text-center md:text-left hidden md:block">{m.sublabel}</div>
             </div>
           ))}
         </div>
 
         {/* CTAs */}
-        <div style={{ display: "flex", gap: "1rem", pointerEvents: "auto" }}>
+        <div className="flex flex-row gap-2 md:gap-4 pointer-events-auto">
           <button
-            style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "13px 0", background: "var(--pink)", color: "white", fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 500, borderRadius: "5px", border: "none", cursor: "pointer", transition: "opacity 0.2s", fontFamily: "inherit" }}
+            className="flex-1 flex items-center justify-center py-2 px-0 md:p-3 bg-[var(--pink)] text-white text-[0.6rem] md:text-[0.8rem] tracking-[0.08em] md:tracking-[0.12em] uppercase font-medium rounded border-none cursor-pointer duration-200"
             onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
             onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
             onClick={() => {
               setFormType("Appointment Booking");
-              // Scroll to footer so phone + email are visible
               lenisRef.current?.scrollTo(document.body.scrollHeight, { duration: 1.4, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
             }}
           >
             Direct Contact
           </button>
           <button
-            style={{ flex: 1, padding: "13px 0", background: "transparent", border: "1px solid rgba(255,31,142,0.45)", color: "rgba(255,255,255,0.85)", fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 400, borderRadius: "5px", cursor: "pointer", transition: "border-color 0.2s, color 0.2s", fontFamily: "inherit" }}
+            className="flex-1 py-2 px-0 md:p-3 bg-transparent border border-[#ff1f8e]/45 text-white/85 text-[0.55rem] md:text-[0.8rem] tracking-[0.05em] md:tracking-[0.12em] uppercase font-normal rounded cursor-pointer transition-colors duration-200"
             onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,31,142,0.9)"; e.currentTarget.style.color = "white"; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,31,142,0.45)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; }}
             onClick={() => {
               setFormType("Capabilities Deck");
-              // Briefly dim left panel, then flash-highlight the right form panel
-              gsap.fromTo(ctaPanelLeftRef.current,
-                { opacity: 1 },
-                { opacity: 0.2, duration: 0.28, yoyo: true, repeat: 1, ease: "power2.inOut" },
-              );
-              gsap.fromTo(ctaPanelRightRef.current,
-                { background: "transparent" },
-                { background: "rgba(255,31,142,0.1)", duration: 0.28, yoyo: true, repeat: 1, ease: "power2.inOut" },
-              );
+              gsap.fromTo(ctaPanelLeftRef.current, { opacity: 1 }, { opacity: 0.2, duration: 0.28, yoyo: true, repeat: 1, ease: "power2.inOut" });
+              gsap.fromTo(ctaPanelRightRef.current, { background: "transparent" }, { background: "rgba(255,31,142,0.1)", duration: 0.28, yoyo: true, repeat: 1, ease: "power2.inOut" });
             }}
           >
-            Request Capabilities Deck
+            Capabilities Deck
           </button>
         </div>
       </div>
@@ -1257,35 +1191,36 @@ export default function DistillationSection() {
       {/* Right panel — contact form */}
       <div
         ref={ctaPanelRightRef}
-        style={{
-          position: "absolute",
-          left: "calc(50% + 90px)", right: "3%",
-          top: 0, bottom: 0,
-          display: "flex", flexDirection: "column", justifyContent: "center",
-          paddingLeft: "40px", zIndex: 8, pointerEvents: "auto",
-        }}
+        className="absolute left-[5%] right-[5%] top-[calc(50%+40px)] bottom-[2%] md:left-[calc(50%+90px)] md:right-[3%] md:top-0 md:bottom-0 flex flex-col justify-start md:justify-center pl-0 md:pl-10 z-[8] pointer-events-auto overflow-y-auto md:overflow-visible mix-blend-normal"
       >
-        <span style={{ fontSize: "0.72rem", letterSpacing: "0.28em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>Get in Touch</span>
-        <h3 style={{ fontSize: "clamp(1.4rem, 2vw, 1.8rem)", fontWeight: 300, color: "white", margin: "0 0 0.5rem" }}>Start the Conversation</h3>
-        <p style={{ fontSize: "0.88rem", fontWeight: 300, color: "rgba(255,255,255,0.45)", margin: "0 0 1.6rem", lineHeight: 1.6 }}>Tell us about your expansion goals and we'll be in touch within 24 hours.</p>
+        <div className="hidden md:block">
+          <span className="text-[0.72rem] tracking-[0.28em] text-[var(--pink)] uppercase font-medium block mb-2">Get in Touch</span>
+          <h3 className="text-[clamp(1.4rem,2vw,1.8rem)] font-light text-white m-0 mb-2">Start the Conversation</h3>
+          <p className="text-[0.88rem] font-light text-white/45 m-0 mb-6 leading-[1.6]">Tell us about your expansion goals and we'll be in touch within 24 hours.</p>
+        </div>
 
         {/* Submission type toggle */}
-        <div style={{ display: "flex", gap: "0", marginBottom: "1.4rem", border: "1px solid rgba(255,31,142,0.25)", borderRadius: "6px", overflow: "hidden" }}>
+        <div className="flex mb-3 md:mb-6 border border-[#ff1f8e]/25 rounded-md overflow-hidden shrink-0">
           {(["Appointment Booking", "Message", "Capabilities Deck"] as FormType[]).map(t => (
             <button
               key={t}
               onClick={() => setFormType(t)}
-              style={{ flex: 1, padding: "9px 4px", fontSize: "0.7rem", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, background: formType === t ? "rgba(255,31,142,0.15)" : "transparent", color: formType === t ? "white" : "rgba(255,255,255,0.45)", border: "none", borderRight: t !== "Capabilities Deck" ? "1px solid rgba(255,31,142,0.25)" : "none", cursor: "pointer", transition: "background 0.2s, color 0.2s" }}
+              className="flex-1 py-1.5 px-0.5 md:py-2 md:px-1 text-[0.55rem] md:text-[0.7rem] tracking-[0.04em] md:tracking-[0.08em] uppercase font-normal border-none cursor-pointer transition-colors duration-200 leading-tight"
+              style={{
+                background: formType === t ? "rgba(255,31,142,0.15)" : "transparent",
+                color: formType === t ? "white" : "rgba(255,255,255,0.45)",
+                borderRight: t !== "Capabilities Deck" ? "1px solid rgba(255,31,142,0.25)" : "none",
+              }}
             >
-              {t}
+              {t === "Capabilities Deck" ? "Deck" : t === "Appointment Booking" ? "Call" : "Message"}
             </button>
           ))}
         </div>
 
         {formSent ? (
-          <div style={{ textAlign: "center", padding: "2rem 0" }}>
-            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>✓</div>
-            <p style={{ color: "white", fontSize: "1rem", fontWeight: 300 }}>Thank you — we'll be in touch shortly.</p>
+          <div className="text-center py-8">
+            <div className="text-[2rem] mb-3 text-[var(--pink)]">✓</div>
+            <p className="text-white text-[0.95rem] font-light">Thank you — we'll be in touch shortly.</p>
           </div>
         ) : (
           <form
@@ -1311,34 +1246,28 @@ export default function DistillationSection() {
                 setSubmitting(false);
               }
             }}
-            style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}
+            className="flex flex-col gap-2.5 md:gap-3.5"
           >
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-              <input className="cta-input" placeholder="Full Name" required value={formData.name}    onChange={e => setFormData(p => ({ ...p, name:    e.target.value }))} />
-              <input className="cta-input" placeholder="Company Legal Name" required value={formData.company} onChange={e => setFormData(p => ({ ...p, company: e.target.value }))} />
+            <div className="grid grid-cols-2 gap-2.5 md:gap-3.5">
+              <input className="cta-input" placeholder="Full Name" required value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} />
+              <input className="cta-input" placeholder="Company" required value={formData.company} onChange={e => setFormData(p => ({ ...p, company: e.target.value }))} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
-              <input className="cta-input" type="email" placeholder="Email" required value={formData.email}   onChange={e => setFormData(p => ({ ...p, email:   e.target.value }))} />
-              <input className="cta-input" type="tel"   placeholder="Phone (optional)" value={formData.phone}   onChange={e => setFormData(p => ({ ...p, phone:   e.target.value }))} />
+            <div className="grid grid-cols-2 gap-2.5 md:gap-3.5">
+              <input className="cta-input" type="email" placeholder="Email" required value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} />
+              <input className="cta-input" type="tel" placeholder="Phone" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} />
             </div>
             <select className="cta-input" required value={formData.service} onChange={e => setFormData(p => ({ ...p, service: e.target.value }))}>
-              <option value="">Service of Interest</option>
+              <option value="">Service Sector</option>
               {SERVICE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <button
               type="submit"
               disabled={submitting}
-              style={{ marginTop: "0.4rem", padding: "13px 0", background: submitting ? "rgba(255,31,142,0.45)" : "var(--pink)", color: "white", fontSize: "0.8rem", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 500, border: "none", borderRadius: "5px", cursor: submitting ? "not-allowed" : "pointer", transition: "opacity 0.2s, background 0.2s", fontFamily: "inherit" }}
-              onMouseEnter={e => { if (!submitting) e.currentTarget.style.opacity = "0.85"; }}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+              className="mt-1 md:mt-2 py-2.5 md:py-3 bg-[var(--pink)] text-white text-[0.7rem] md:text-[0.8rem] tracking-[0.14em] uppercase font-medium border-none rounded cursor-pointer transition-all duration-200 disabled:opacity-45 disabled:cursor-not-allowed hover:opacity-85"
             >
-              {submitting ? "Sending…" : formType === "Appointment Booking" ? "Select a Time →" : formType === "Capabilities Deck" ? "Request Deck →" : "Send Message →"}
+              {submitting ? "Sending…" : formType === "Appointment Booking" ? "Select Time →" : formType === "Capabilities Deck" ? "Request Deck →" : "Send Message →"}
             </button>
-            {formError && (
-              <p style={{ margin: "0.25rem 0 0", fontSize: "0.75rem", color: "#f87171", fontWeight: 300 }}>
-                {formError}
-              </p>
-            )}
+            {formError && <p className="m-0 mt-1 text-[0.75rem] text-red-400 font-light">{formError}</p>}
           </form>
         )}
       </div>

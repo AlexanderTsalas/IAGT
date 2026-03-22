@@ -4,17 +4,12 @@ import { useRef, useState, useCallback, useEffect, useLayoutEffect } from "react
 import { flushSync } from "react-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import dynamic from "next/dynamic";
+import WorldMap from "./WorldMap";
 
 gsap.registerPlugin(ScrollTrigger);
-
-// Split D3 + react-simple-maps into their own chunk so they download in
-// parallel with the ServicesScroll bundle and don't inflate its evaluation cost.
-const WorldMap = dynamic(() => import("./WorldMap"), { ssr: false });
 import HeroOverlay from "./HeroOverlay";
 import ServicePanel, { type ServicePanelHandle } from "./ServicePanel";
 import Header from "./Header";
-import FlyingLogo, { type FlyingLogoHandle } from "./FlyingLogo";
 import { services, type ServiceId } from "@/lib/services";
 import { SUBREGION_PINS, PIN_DIRS } from "@/lib/mapPins";
 
@@ -64,11 +59,18 @@ const REGION_BBOX: Record<ServiceId, [[number, number], [number, number]]> = {
 
 function getRegionTransform(
   bounds: [[number, number], [number, number]],
-  targetXFrac = 0.68,
+  defaultTargetXFrac = 0.68,
   fillFactor  = 0.85,
 ): { x: string; y: string; scale: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const isMobile = vw < 768; // Tailwind md breakpoint
+
+  const targetXFrac = isMobile ? 0.5 : defaultTargetXFrac;
+  const targetYFrac = isMobile ? 0.25 : 0.5; // Top 25% on mobile, center on desktop
+  const availW = isMobile ? (vw * 0.90 * fillFactor) : (vw * 0.50 * fillFactor);
+  const availH = isMobile ? (vh * 0.45 * fillFactor) : (vh * 0.85 * fillFactor);
+
   const elW = vw * 1.2;
   const elH = vh * 1.2;
   const svgToCss = Math.min(elW / VIEWBOX_W, elH / VIEWBOX_H);
@@ -77,8 +79,6 @@ function getRegionTransform(
   const centerLat = (minLat + maxLat) / 2;
   const wCss = (maxLng - minLng) * PROJ_SCALE * (Math.PI / 180) * svgToCss;
   const hCss = Math.abs(mercatorSVG(maxLat) - mercatorSVG(minLat)) * svgToCss;
-  const availW = vw * 0.50 * fillFactor;
-  const availH = vh * 0.85 * fillFactor;
   const scale  = Math.min(availW / wCss, availH / hCss, 4.0);
   const dxCss = (centerLng - PROJ_LNG) * PROJ_SCALE * (Math.PI / 180) * svgToCss;
   const dyCss = (mercatorSVG(centerLat) - ORIGIN_Y_SVG) * svgToCss;
@@ -87,7 +87,7 @@ function getRegionTransform(
   const regionX = originX + dxCss;
   const regionY = originY + dyCss;
   const txPx = vw * targetXFrac - originX - (regionX - originX) * scale;
-  const tyPx = vh * 0.5         - originY - (regionY - originY) * scale;
+  const tyPx = vh * targetYFrac - originY - (regionY - originY) * scale;
   return {
     x: `${((txPx / elW) * 100).toFixed(2)}%`,
     y: `${((tyPx / elH) * 100).toFixed(2)}%`,
@@ -119,8 +119,6 @@ export default function ServicesScroll({ initialService }: { initialService?: st
   const heroWrapRef     = useRef<HTMLDivElement>(null);
   const panelsRef       = useRef<(HTMLDivElement | null)[]>([]);
   const panelApiRefs    = useRef<(ServicePanelHandle | null)[]>([]);
-  const flyingLogoRef   = useRef<FlyingLogoHandle>(null);
-  const logoSlotRef     = useRef<HTMLDivElement>(null);
 
   // Current section index: -1 = hero, 0–N = service sections
   const currentIndexRef = useRef(isRestoring ? initialIdx : -1);
@@ -235,14 +233,10 @@ export default function ServicesScroll({ initialService }: { initialService?: st
           setMapScale(mapTargetRef.current.scale);
           setActiveService(services[clamped].id);
         });
-        // Start logo flight on the first clean frame after the synchronous render.
-        // Starting before flushSync causes GSAP to skip the blocked frames and
-        // jump ahead on resume — visible as a sudden velocity spike at the start.
-        flyingLogoRef.current?.flyToHeader();
       } else if (isGoingToHero) {
+        gsap.set(heroWrapRef.current, { visibility: "visible" });
         // Remove subregion pins while the panel is still exiting (not visible).
         flushSync(() => setActiveService(null));
-        flyingLogoRef.current?.flyToHero();
       }
 
       // ── Panel entry — starts 0.10 s before map settles ───────────────────
@@ -298,7 +292,7 @@ export default function ServicesScroll({ initialService }: { initialService?: st
   // paints, so GSAP.set calls here are invisible to the user.
   useLayoutEffect(() => {
     if (!isRestoring || !initialPos) return;
-    gsap.set(heroWrapRef.current, { opacity: 0 });
+    gsap.set(heroWrapRef.current, { opacity: 0, visibility: "hidden" });
     gsap.set(mapWrapRef.current,  { x: initialPos.x, y: initialPos.y, scale: initialPos.scale });
     const panelEl = panelsRef.current[initialIdx];
     if (panelEl) panelEl.style.opacity = "1";
@@ -312,7 +306,6 @@ export default function ServicesScroll({ initialService }: { initialService?: st
   // ── Animate panel content in after refs are ready ────────────────────────
   useEffect(() => {
     if (!isRestoring) return;
-    flyingLogoRef.current?.snapToHeader();
     panelApiRefs.current[initialIdx]?.enter(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -377,11 +370,10 @@ export default function ServicesScroll({ initialService }: { initialService?: st
 
   return (
     <>
-      <Header logoSlotRef={logoSlotRef} />
-      <FlyingLogo ref={flyingLogoRef} targetRef={logoSlotRef} />
+      <Header />
 
       {/* Single fixed-height viewport — no scroll container */}
-      <div ref={containerRef} style={{ position: "relative", height: "100vh", overflow: "hidden", background: "var(--dark)", visibility: isRestoring ? "hidden" : "visible" }}>
+      <div ref={containerRef} style={{ position: "relative", height: "100dvh", overflow: "hidden", background: "var(--dark)", visibility: isRestoring ? "hidden" : "visible" }}>
 
         {/* ── Background map ─────────────────────────────────────────────── */}
         <div ref={parallaxMapRef} style={{ position: "absolute", inset: 0, zIndex: 0 }}>
@@ -406,10 +398,15 @@ export default function ServicesScroll({ initialService }: { initialService?: st
             background: "radial-gradient(ellipse at center, transparent 35%, rgba(17,17,19,0.65) 100%)",
           }} />
 
-          {/* Left gradient mask — opacity-transitioned so the browser composites it on GPU */}
-          <div style={{
+          {/* Adaptive Gradient mask — opacity-transitioned so the browser composites it on GPU */}
+          <style dangerouslySetInnerHTML={{__html: `
+            .service-gradient-backdrop { background: linear-gradient(to top, rgba(17,17,19,1) 0%, rgba(17,17,19,0.98) 45%, rgba(17,17,19,0.55) 60%, transparent 85%); }
+            @media (min-width: 768px) {
+              .service-gradient-backdrop { background: linear-gradient(to right, rgba(17,17,19,1) 0%, rgba(17,17,19,0.97) 36%, rgba(17,17,19,0.55) 50%, transparent 100%); }
+            }
+          `}} />
+          <div className="service-gradient-backdrop" style={{
             position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
-            background: "linear-gradient(to right, rgba(17,17,19,1) 0%, rgba(17,17,19,0.97) 36%, rgba(17,17,19,0.55) 50%, transparent 100%)",
             opacity: heroVisible ? 0 : 1,
             transition: "opacity 0.6s ease",
           }} />
@@ -431,6 +428,11 @@ export default function ServicesScroll({ initialService }: { initialService?: st
               const dir     = PIN_DIRS[i];
               const vw      = window.innerWidth;
               const vh      = window.innerHeight;
+              const isMobile = vw < 768;
+
+              // Hide pins entirely on mobile to reduce clutter
+              if (isMobile) return null;
+
               const elW     = vw * 1.2;
               const elH     = vh * 1.2;
               const ppu     = Math.min(elW / VIEWBOX_W, elH / VIEWBOX_H) * mapTargetRef.current.scale;
@@ -438,8 +440,13 @@ export default function ServicesScroll({ initialService }: { initialService?: st
               const endY    = anchor.y + dir.cy * ppu;
               const goRight = dir.cx > 0;
               const BOX_W   = 248;
-              // Minimum left edge — keep boxes out of the service-panel zone (~left 52% of vw)
-              const MIN_LEFT = vw * 0.52;
+              
+              // Desktop: push right of left-panel.
+              const MIN_LEFT   = vw * 0.52;
+              const MAX_RIGHT  = vw - BOX_W - 16;
+              const rawLeft    = goRight ? endX + 4 : endX - 4 - BOX_W;
+              const clampedLeft = Math.max(MIN_LEFT, Math.min(rawLeft, MAX_RIGHT));
+
               const Icon    = pin.icon;
               const isHov   = hoveredBullet === i;
               return (
@@ -449,7 +456,7 @@ export default function ServicesScroll({ initialService }: { initialService?: st
                   onMouseLeave={() => setHoveredBullet(null)}
                   style={{
                     position: "absolute",
-                    left:    Math.max(goRight ? endX + 4 : endX - 4 - BOX_W, MIN_LEFT),
+                    left:    clampedLeft,
                     top:     endY - 28,
                     width:   BOX_W,
                     cursor:  "default",
@@ -510,10 +517,9 @@ export default function ServicesScroll({ initialService }: { initialService?: st
               // Set opacity imperatively on mount so React doesn't reset it on re-renders
               if (el && el.style.opacity === "") el.style.opacity = "0";
             }}
+            className="absolute inset-0 z-10 flex flex-col justify-end md:justify-start md:flex-row md:items-center pb-8 md:pb-0"
             style={{
-              position: "absolute", inset: 0, zIndex: 10,
               pointerEvents: activeService === service.id ? "auto" : "none",
-              display: "flex", alignItems: "center",
             }}
           >
             <ServicePanel

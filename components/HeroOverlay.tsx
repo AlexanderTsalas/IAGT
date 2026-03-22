@@ -7,18 +7,17 @@ interface HeroOverlayProps {
 export default function HeroOverlay({ onScrollToServices }: HeroOverlayProps) {
     return (
       <div
-        className="absolute inset-0 z-10 flex flex-col items-start justify-end pointer-events-none"
+        className="absolute inset-0 z-10 flex flex-col items-start justify-end pointer-events-none pr-[6%] md:pr-[50%]"
         style={{
           paddingTop: "64px",
           paddingBottom: "10vh",
           paddingLeft: "6%",
-          paddingRight: "50%",
         }}
       >
         {/* Headline */}
         <div className="pointer-events-auto" style={{ marginBottom: "0.75rem" }}>
           <h1
-            className="text-white font-light leading-tight"
+            className="text-white font-light leading-tight mt-8 md:mt-0"
             style={{ fontSize: "clamp(2rem, 4vw, 3.5rem)", maxWidth: "600px", marginBottom: "1rem" }}
           >
             Your operational gateway to{" "}

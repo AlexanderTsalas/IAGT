@@ -1,56 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { LogoMark } from "./FlyingLogo";
+import { LogoMark } from "./Header";
 
 export default function Footer() {
   return (
-    <footer
-      style={{
-        background: "var(--dark)",
-        borderTop: "1px solid rgba(255,31,142,0.15)",
-        padding: "2.5rem 5%",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr 1fr",
-        alignItems: "start",
-        gap: "2rem",
-      }}
-    >
+    <footer className="bg-[var(--dark)] border-t border-[#ff1f8e]/15 py-12 md:py-16 px-6 md:px-[5%] flex flex-col md:flex-row justify-center items-start gap-14 md:gap-8 w-full overflow-hidden shrink-0">
+      
       {/* ── Left — brand + contact ── */}
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.1rem" }}>
-          <LogoMark size={26} />
-          <span style={{ color: "white", fontSize: "0.88rem", fontWeight: 500, letterSpacing: "0.22em" }}>
+      <div className="flex flex-col items-center text-center w-full md:flex-1 gap-2 md:gap-3">
+        <div className="flex items-center justify-center gap-2.5 mb-2">
+          <LogoMark size={26} className="w-[26px] h-[26px]" />
+          <span className="text-white text-[0.88rem] font-medium tracking-[0.22em]">
             INTELLIAGTECH
           </span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+        <div className="flex flex-col items-center gap-1.5 md:gap-2">
           <a
             href="mailto:hello@iagt.com"
-            style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.8rem", fontWeight: 300, textDecoration: "none", letterSpacing: "0.02em", transition: "color 0.2s" }}
-            onMouseEnter={e => (e.currentTarget.style.color = "white")}
-            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+            className="text-white/45 text-[0.8rem] font-light no-underline tracking-[0.02em] transition-colors duration-200 hover:text-white"
           >
             hello@iagt.com
           </a>
           <a
             href="tel:+302102603751"
-            style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.8rem", fontWeight: 300, textDecoration: "none", letterSpacing: "0.02em", transition: "color 0.2s" }}
-            onMouseEnter={e => (e.currentTarget.style.color = "white")}
-            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+            className="text-white/45 text-[0.8rem] font-light no-underline tracking-[0.02em] transition-colors duration-200 hover:text-white"
           >
             +30 210 260 3751
           </a>
-          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8rem", fontWeight: 300, lineHeight: 1.5 }}>
+          <span className="text-white/35 text-[0.8rem] font-light leading-[1.6] mt-1">
             Grammou 71, Marousi 151 24, Greece
-            <br />BCO Business Center Offices
+            <br />
+            BCO Business Center Offices
           </span>
         </div>
       </div>
 
       {/* ── Center — legal links ── */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-        <span style={{ fontSize: "0.62rem", letterSpacing: "0.22em", color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+      <div className="flex flex-col items-center text-center w-full md:flex-1 gap-2">
+        <span className="text-[0.62rem] tracking-[0.22em] text-white/25 uppercase mb-1 md:mb-2">
           Legal
         </span>
         {[
@@ -62,9 +50,7 @@ export default function Footer() {
           <Link
             key={link.href}
             href={link.href}
-            style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", fontWeight: 300, textDecoration: "none", letterSpacing: "0.03em", transition: "color 0.2s" }}
-            onMouseEnter={e => (e.currentTarget.style.color = "white")}
-            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}
+            className="text-white/40 text-[0.78rem] font-light no-underline tracking-[0.03em] transition-colors duration-200 py-0.5 hover:text-white"
           >
             {link.label}
           </Link>
@@ -72,36 +58,35 @@ export default function Footer() {
       </div>
 
       {/* ── Right — registry ── */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.35rem" }}>
-        <span style={{ fontSize: "0.62rem", letterSpacing: "0.22em", color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: "0.4rem" }}>
+      <div className="flex flex-col items-center text-center w-full md:flex-1 gap-1.5">
+        <span className="text-[0.62rem] tracking-[0.22em] text-white/25 uppercase mb-1 md:mb-2">
           Company
         </span>
-        <span style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.82rem", fontWeight: 400, letterSpacing: "0.03em" }}>
-          IntelliAGTech Μονοπροσωπη ΙΚΕ
+        <span className="text-white/70 text-[0.82rem] font-normal tracking-[0.03em]">
+          IntelliAGTech Μονοπρόσωπη ΙΚΕ
         </span>
-        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", fontWeight: 300 }}>
+        <span className="text-white/40 text-[0.78rem] font-light mt-0.5">
           Business Registry No.
         </span>
-        <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.82rem", fontWeight: 400, letterSpacing: "0.06em" }}>
+        <span className="text-white/60 text-[0.82rem] font-normal tracking-[0.06em]">
           ΓΕΜΗ 190197803000
         </span>
-        <span style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.72rem", fontWeight: 300, marginTop: "0.75rem" }}>
+        <span className="text-white/25 text-[0.72rem] font-light mt-4">
           © {new Date().getFullYear()} IntelliAgTech. All rights reserved.
         </span>
-        <span style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.72rem", fontWeight: 300 }}>
+        <span className="text-white/25 text-[0.72rem] font-light mt-0.5">
           Developed and Maintained by{" "}
           <a
             href="https://distarter.com"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: "var(--pink)", textDecoration: "none", transition: "opacity 0.2s" }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = "0.75")}
-            onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            className="text-[var(--pink)] no-underline transition-opacity duration-200 hover:opacity-75"
           >
             Distarter
           </a>
         </span>
       </div>
+
     </footer>
   );
 }

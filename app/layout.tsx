@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   description:
     "Your operational gateway to Greece and Southeast Europe. Market entry, commercial representation, and operational execution for international companies.",
 };
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 import SmoothScroll from "@/components/SmoothScroll";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
@@ -24,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} antialiased`} suppressHydrationWarning>
         <SmoothScroll>
           <PageTransition>
             {children}

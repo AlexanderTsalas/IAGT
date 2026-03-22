@@ -154,20 +154,12 @@ function FeaturedArticle({ article }: { article: Article }) {
           overflow: "hidden",
           background: hovered ? "rgba(255,31,142,0.03)" : "transparent",
           transition: "border-color 0.2s ease, background 0.2s ease",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
         }}
+        className="grid grid-cols-1 md:grid-cols-2"
       >
         {/* Left — stats panel */}
         <div
-          style={{
-            background: "rgba(255,31,142,0.05)",
-            borderRight: "1px solid rgba(255,31,142,0.12)",
-            padding: "2.5rem",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-          }}
+          className="bg-[rgba(255,31,142,0.05)] border-b md:border-b-0 md:border-r border-[rgba(255,31,142,0.12)] p-6 md:p-10 flex flex-col justify-between"
         >
           <div>
             <span style={{ fontSize: "0.58rem", letterSpacing: "0.3em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500 }}>
@@ -193,7 +185,7 @@ function FeaturedArticle({ article }: { article: Article }) {
         </div>
 
         {/* Right — title + excerpt */}
-        <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="p-6 md:p-10 flex flex-col justify-between">
           <div>
             <h2 style={{ fontSize: "clamp(1.3rem, 2vw, 1.8rem)", fontWeight: 300, color: "white", lineHeight: 1.35, margin: "0 0 1rem" }}>
               {article.title}
@@ -203,7 +195,7 @@ function FeaturedArticle({ article }: { article: Article }) {
             </p>
           </div>
 
-          <div style={{ marginTop: "2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
               <div style={{
                 width: 32, height: 32, borderRadius: "50%",
@@ -218,7 +210,7 @@ function FeaturedArticle({ article }: { article: Article }) {
                 <p style={{ margin: 0, fontSize: "0.65rem", color: "rgba(255,255,255,0.3)", fontWeight: 300 }}>{article.author.title}</p>
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
+            <div className="text-left sm:text-right">
               <p style={{ margin: 0, fontSize: "0.68rem", color: "rgba(255,255,255,0.3)" }}>{formatDate(article.publishedAt)}</p>
               <p style={{ margin: "0.15rem 0 0", fontSize: "0.65rem", color: "rgba(255,31,142,0.6)" }}>{article.readingTime} min read →</p>
             </div>
@@ -244,8 +236,8 @@ export default function NewsPage() {
   return (
     <>
       <Header rightLabel="Home" rightHref="/" />
-      <div style={{ minHeight: "100vh", background: "var(--dark)", paddingTop: 64 }}>
-        <div style={{ padding: "6vh 8% 10vh" }}>
+      <div className="min-h-screen bg-[var(--dark)] pt-[64px]">
+        <div className="px-6 md:px-[8%] py-10 md:py-[6vh] pb-16 md:pb-[10vh]">
 
           {/* ── Page header ── */}
           <div style={{ marginBottom: "3.5rem" }}>

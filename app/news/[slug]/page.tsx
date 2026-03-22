@@ -141,7 +141,7 @@ export default async function ArticlePage({
       <div style={{ minHeight: "100vh", background: "var(--dark)", paddingTop: 64 }}>
 
         {/* ── Article header ── */}
-        <header style={{ borderBottom: "1px solid rgba(255,31,142,0.12)", padding: "5vh 8% 4vh" }}>
+        <header className="border-b border-[#ff1f8e]/10 px-6 md:px-[8%] py-10 md:py-[5vh] pb-8 md:pb-[4vh]">
 
           {/* Breadcrumb nav */}
           <nav aria-label="Breadcrumb" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "2rem" }}>
@@ -211,12 +211,10 @@ export default async function ArticlePage({
         <div
           role="region"
           aria-label="Key statistics"
+          className={`grid grid-cols-2 md:grid-cols-${Math.min(article.keyStats.length, 4)} gap-6 md:gap-4`}
           style={{
             borderBottom: "1px solid rgba(255,31,142,0.1)",
-            padding: "2rem 8%",
-            display: "grid",
-            gridTemplateColumns: `repeat(${article.keyStats.length}, 1fr)`,
-            gap: "1rem",
+            padding: "2rem 6%",
             background: "rgba(255,31,142,0.025)",
           }}
         >
@@ -233,7 +231,7 @@ export default async function ArticlePage({
         </div>
 
         {/* ── Body: two-column ── */}
-        <div style={{ padding: "5vh 8% 8vh", display: "grid", gridTemplateColumns: "1fr 340px", gap: "5rem", alignItems: "start" }}>
+        <div className="px-6 md:px-[8%] py-10 md:py-[5vh] pb-16 md:pb-[8vh] grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-12 lg:gap-20 items-start">
 
           {/* Main article content */}
           <article>

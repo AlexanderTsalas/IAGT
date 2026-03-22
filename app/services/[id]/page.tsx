@@ -127,7 +127,15 @@ export default function ServiceDetailPage() {
 
     gsap.to(targets, {
       opacity: 0, y: -10, duration: 0.2, ease: "power2.in",
-      onComplete: () => { setActive(idx); },
+      onComplete: () => { 
+        setActive(idx);
+        setTimeout(() => {
+          if (window.innerWidth < 768 && rightColRef.current) {
+            const rect = rightColRef.current.getBoundingClientRect();
+            window.scrollBy({ top: rect.top - 70, behavior: 'smooth' });
+          }
+        }, 50);
+      },
     });
   };
 
@@ -157,14 +165,10 @@ export default function ServiceDetailPage() {
       <Header rightLabel="Home" rightHref="/" />
 
       {/* ── Main split ────────────────────────────────────────────────────── */}
-      <main style={{ display: "flex", height: "100vh", paddingTop: 64, background: "var(--dark)" }}>
+      <main className="flex flex-col md:flex-row min-h-[100dvh] pt-[64px] bg-[var(--dark)]">
 
         {/* ── Left column — mirrors ServicePanel ─────────────────────────── */}
-        <div style={{
-          width: "44%", maxWidth: 600, marginLeft: "6%",
-          display: "flex", flexDirection: "column", justifyContent: "center",
-          paddingRight: "3%",
-        }}>
+        <div className="w-full md:w-[44%] md:max-w-[600px] md:ml-[6%] flex flex-col justify-start md:justify-center px-6 md:px-0 md:pr-[3%] pt-8 md:pt-0 mb-12 md:mb-0 shrink-0">
           {/* Number + Title */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem", marginBottom: "1.5rem" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
@@ -230,13 +234,7 @@ export default function ServiceDetailPage() {
         <div
           key={active}
           ref={rightColRef}
-          style={{
-            flex: 1,
-            borderLeft: "1px solid rgba(255,31,142,0.1)",
-            display: "flex", flexDirection: "column", justifyContent: "center",
-            padding: "4vh 6% 4vh 4.5%",
-            overflowY: "auto",
-          }}
+          className="flex flex-col justify-start md:justify-center flex-1 border-t md:border-t-0 md:border-l border-[#ff1f8e]/10 px-6 py-12 md:py-[4vh] md:px-[6%] md:pl-[4.5%] overflow-y-auto"
         >
           {/* Icon + title row */}
           <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginBottom: "1.5rem" }}>
@@ -309,7 +307,7 @@ export default function ServiceDetailPage() {
           <span style={{ fontSize: "0.6rem", letterSpacing: "0.28em", color: "rgba(255,255,255,0.22)", textTransform: "uppercase", display: "block", marginBottom: "1rem" }}>
             Impact
           </span>
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${detail.metrics.length}, 1fr)`, gap: "1.25rem" }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-4 lg:grid-cols-4 min-w-0" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(130px, 1fr))` }}>
             {detail.metrics.map((m, i) => (
               <div key={i} className="sd-metric-block">
                 <span style={{ fontSize: "clamp(1.6rem, 2.5vw, 2.1rem)", fontWeight: 200, color: "white", lineHeight: 1 }}>
