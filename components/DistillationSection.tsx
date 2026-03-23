@@ -458,57 +458,29 @@ export default function DistillationSection() {
     }
   });
 
-  // ── Mobile scroll pinning — native scroll listener ────────────────────────
-  // 'scroll' events fire before the paint for that frame. Calling window.scrollTo()
-  // here cancels iOS momentum within the same compositing cycle — no rendered
-  // bounce frame, unlike the RAF-based useLenis approach above.
+  // ── Mobile scroll safety net — native scroll listener ──────────────────────
+  // Only corrects position if somehow native scroll leaks past the pin point
+  // (e.g. touchmove preventDefault was non-cancelable). Uses a re-entrance guard
+  // to prevent the classic scrollTo → scroll event → scrollTo feedback loop that
+  // caused the intense stutter.
   useEffect(() => {
-    let prevRectTop = 0;
+    let isCorrectingScroll = false;
 
     const onScroll = () => {
       if (window.innerWidth >= 768) return;
-      // Skip while a programmatic RAF scroll animation is driving the position
       if (mobileScrollAnimRef.current) return;
+      if (isCorrectingScroll) return;
       const el = wrapperRef.current;
       if (!el) return;
       const rectTop = el.getBoundingClientRect().top;
 
-      // ② Re-engagement: section crossing back into viewport from below.
-      if (stepRef.current === 5 && prevRectTop < -2 && rectTop >= -2) {
-        if (Math.abs(rectTop) > 0.5) {
-          window.scrollTo(0, window.scrollY + rectTop);
-        }
-        if (document.body.style.overflow !== "hidden") {
-          document.body.style.overflow = "hidden";
-        }
-        stepRef.current = 4;
-        if (selectedCtaActiveRef.current) {
-          handleBackClick();
-        } else {
-          tls.current[4]?.reverse();
-        }
-        prevRectTop = rectTop;
-        return;
+      // Safety-net pin: if section should be pinned but has drifted, snap back once.
+      // stepRef < 5 covers both initial arrival (step 0) and mid-animation steps.
+      if (stepRef.current < 5 && rectTop < -1) {
+        isCorrectingScroll = true;
+        window.scrollTo(0, window.scrollY + rectTop);
+        requestAnimationFrame(() => { isCorrectingScroll = false; });
       }
-
-      // ① Downward pin: lock native scrolling to brutally end momentum without jitter
-      if (stepRef.current < 5 && rectTop <= 0) {
-        if (Math.abs(rectTop) > 0.5) {
-          window.scrollTo(0, window.scrollY + rectTop);
-        }
-        if (document.body.style.overflow !== "hidden") {
-          document.body.style.overflow = "hidden";
-        }
-        prevRectTop = rectTop;
-        return;
-      }
-
-      // ② Upward re-engagement: if locked at 0 but trying to swipe UP (reverse scroll), unlock it safely.
-      if (stepRef.current === 0 && document.body.style.overflow === "hidden") {
-        document.body.style.overflow = "";
-      }
-
-      prevRectTop = rectTop;
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -827,20 +799,9 @@ export default function DistillationSection() {
       }
 
       if (swipingDown) {
-        // trap until all steps done
-        if (stepRef.current < 5) {
-          if (e.cancelable) e.preventDefault();
-        } else {
-          // If unlocked going down, ensure body allows scrolling
-          if (document.body.style.overflow === "hidden") document.body.style.overflow = "";
-        }
+        if (stepRef.current < 5 && e.cancelable) e.preventDefault();
       } else {
-        if (stepRef.current > 0 || (tls.current[0]?.progress() ?? 0) > 0) {
-          if (e.cancelable) e.preventDefault();
-        } else {
-          // step 0, tl0 clean → release upward to services section
-          if (document.body.style.overflow === "hidden") document.body.style.overflow = "";
-        }
+        if ((stepRef.current > 0 || (tls.current[0]?.progress() ?? 0) > 0) && e.cancelable) e.preventDefault();
       }
     };
 
@@ -848,23 +809,35 @@ export default function DistillationSection() {
       const rect = wrapperRef.current?.getBoundingClientRect();
       if (!rect) return;
 
+      const isMobile = window.innerWidth < 768;
+
       // ── Footer → distillation re-engagement (mobile) ──────────────────────
-      // When all 5 steps are done and the user swipes up from the footer,
-      // cancel iOS momentum synchronously (window.scrollTo in touchend fires
-      // before the compositor starts the momentum animation) then RAF-animate
-      // back to the distillation section top.
-      if (window.innerWidth < 768 && stepRef.current === 5 && rect.top < -5) {
+      if (isMobile && stepRef.current === 5 && rect.top < -5) {
         const deltaY = touchStartY - e.changedTouches[0].clientY;
         if (deltaY < -50) { // swiping up
-          const targetY = window.scrollY + rect.top; // section top in page coords
-          // No manual JS RAF animating looping — let native momentum or simple snap handle it safely.
+          // Cancel iOS momentum synchronously — touchend fires before compositor starts momentum
+          window.scrollTo(0, window.scrollY);
+          const targetY = window.scrollY + rect.top;
           window.scrollTo({ top: targetY, behavior: "smooth" });
-          stepRef.current = 4; // set before animation so scroll listener safely intercepts and locks bounds natively
+          stepRef.current = 4;
+          if (selectedCtaActiveRef.current) {
+            handleBackClick();
+          } else {
+            tls.current[4]?.reverse();
+          }
         }
         return;
       }
 
       if (Math.abs(rect.top) > 5) return;
+
+      // Cancel iOS momentum synchronously when section is pinned (mobile only).
+      // touchend fires before the compositor starts the momentum animation,
+      // so this single scrollTo cancels any pending inertia without feedback loops.
+      if (isMobile && stepRef.current > 0 && stepRef.current < 5) {
+        window.scrollTo(0, window.scrollY);
+      }
+
       if (isIntroAnimating.current) return;
       if (
         tls.current[2]?.isActive() || tls.current[3]?.isActive() ||
@@ -880,7 +853,7 @@ export default function DistillationSection() {
       // ── Selected-industry state ────────────────────────────────────────────
       if (selectedIndexRef.current !== null || isSelectingRef.current) {
         if (!isSelectingRef.current && swipingDown && selectedCtaActiveRef.current) {
-          stepRef.current = 5; // useLenis clamp stops pinning → natural scroll to footer
+          stepRef.current = 5;
           return;
         }
         if (isSelectingRef.current) return;
@@ -905,9 +878,7 @@ export default function DistillationSection() {
             tls.current[stepRef.current]?.play();
           }
           stepRef.current++;
-          // When stepRef reaches 5, useLenis clamp stops pinning → natural scroll resumes
         }
-        // stepRef >= 5: touchmove already released → natural scroll to footer
       } else {
         if (stepRef.current > 0) {
           if (now - lastScrollTime.current < 250) return;
@@ -915,7 +886,6 @@ export default function DistillationSection() {
           stepRef.current--;
           tls.current[stepRef.current]?.reverse();
         }
-        // stepRef 0, no tl0 progress: touchmove already released → scroll back to services
       }
     };
 

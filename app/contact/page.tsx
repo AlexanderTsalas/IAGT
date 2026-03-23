@@ -107,7 +107,7 @@ export default function ContactPage() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="mailto:hello@iagt.com"
+                href="mailto:a.galani@intelliagtech.com"
                 style={{ background: "var(--pink)", transition: "opacity 0.2s" }}
                 className="flex-1 flex items-center justify-center py-[13px] text-white text-[0.78rem] tracking-[0.12em] uppercase font-medium rounded-[5px] no-underline hover:opacity-85"
               >

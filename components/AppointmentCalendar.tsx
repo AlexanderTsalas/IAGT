@@ -95,7 +95,7 @@ export default function AppointmentCalendar({ onClose }: Props) {
   // ── Confirmed view ────────────────────────────────────────────────────────
   if (view === "confirmed") {
     const dateStr = formatDateLong(selectedDate!);
-    const mailto  = `mailto:hello@iagt.com?subject=Appointment%20Request%20%E2%80%93%20${encodeURIComponent(dateStr)}%20${selectedTime}&body=I%20would%20like%20to%20book%20a%20discovery%20call%20on%20${encodeURIComponent(dateStr)}%20at%20${selectedTime}%20EET.`;
+    const mailto  = `mailto:a.galani@intelliagtech.com?subject=Appointment%20Request%20%E2%80%93%20${encodeURIComponent(dateStr)}%20${selectedTime}&body=I%20would%20like%20to%20book%20a%20discovery%20call%20on%20${encodeURIComponent(dateStr)}%20at%20${selectedTime}%20EET.`;
 
     return (
       <div style={{ textAlign: "center", padding: "0.5rem 0" }}>

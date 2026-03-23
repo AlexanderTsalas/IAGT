@@ -38,8 +38,8 @@ body {
 
 /* Map region styles */
 .map-region {
-  fill: #1a1a1f;
-  stroke: #2a2a32;
+  fill: #222228;
+  stroke: #33333d;
   stroke-width: 0.4;
   transition: fill 0.15s ease, stroke 0.15s ease, stroke-width 0.15s ease;
 }
@@ -49,14 +49,14 @@ body {
 }
 
 .map-region.active {
-  fill: #1c1018;
-  stroke: rgba(255, 31, 142, 0.2);
+  fill: #2b1824;
+  stroke: rgba(255, 31, 142, 0.35);
   stroke-width: 0.5;
 }
 
 .map-region.greece {
-  fill: #2c2c30;
-  stroke: rgba(255, 255, 255, 0.28);
+  fill: #36363d;
+  stroke: rgba(255, 255, 255, 0.4);
   stroke-width: 0.7;
 }
 
@@ -115,7 +115,7 @@ body {
 .rsm-svg:has(.regulatory.hoverable:hover)        .regulatory,
 .rsm-svg:has(.local-ops.hoverable:hover)         .local-ops,
 .rsm-svg:has(.business-dev.hoverable:hover)      .business-dev {
-  fill: #1c1018;
-  stroke: rgba(255, 31, 142, 0.22);
+  fill: #2b1824;
+  stroke: rgba(255, 31, 142, 0.35);
   stroke-width: 0.5;
 }

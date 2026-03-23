@@ -384,6 +384,13 @@ export default function ServicesScroll({ initialService }: { initialService?: st
     const onTouchEnd = (e: TouchEvent) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect || Math.abs(rect.top) > 5) return;
+
+      // Cancel iOS momentum synchronously while services section is pinned.
+      // touchend fires before the compositor starts the momentum animation.
+      if (window.innerWidth < 768) {
+        window.scrollTo(0, window.scrollY);
+      }
+
       if (isAnimating.current) return;
       const deltaY = touchStartY - e.changedTouches[0].clientY;
       if (Math.abs(deltaY) < 50) return;
@@ -393,8 +400,7 @@ export default function ServicesScroll({ initialService }: { initialService?: st
       if (atTop) return;
       if (atBottom) {
         if (window.innerWidth < 768) {
-          const targetY = window.scrollY + rect.top + rect.height; // container bottom = distillation top
-          // Delegate deceleration to iOS native smooth scroll instead of manual programmatic looping
+          const targetY = window.scrollY + rect.top + rect.height;
           window.scrollTo({ top: targetY, behavior: "smooth" });
         }
         return;
