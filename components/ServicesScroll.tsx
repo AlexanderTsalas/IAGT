@@ -393,23 +393,9 @@ export default function ServicesScroll({ initialService }: { initialService?: st
       if (atTop) return;
       if (atBottom) {
         if (window.innerWidth < 768) {
-          // Cancel iOS momentum synchronously before the compositor starts it,
-          // then RAF-animate smoothly to the distillation section top.
           const targetY = window.scrollY + rect.top + rect.height; // container bottom = distillation top
-          window.scrollTo(0, window.scrollY); // cancels pending momentum
-          const startY = window.scrollY;
-          const dist   = targetY - startY;
-          if (dist > 1) {
-            const dur = 420;
-            let t0: number | null = null;
-            const tick = (ts: number) => {
-              if (t0 === null) t0 = ts;
-              const p = Math.min((ts - t0) / dur, 1);
-              window.scrollTo(0, startY + dist * (1 - Math.pow(1 - p, 3)));
-              if (p < 1) requestAnimationFrame(tick);
-            };
-            requestAnimationFrame(tick);
-          }
+          // Delegate deceleration to iOS native smooth scroll instead of manual programmatic looping
+          window.scrollTo({ top: targetY, behavior: "smooth" });
         }
         return;
       }

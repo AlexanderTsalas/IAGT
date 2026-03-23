@@ -474,10 +474,13 @@ export default function DistillationSection() {
       const rectTop = el.getBoundingClientRect().top;
 
       // ② Re-engagement: section crossing back into viewport from below.
-      //    Correct position AND trigger step reversal (state change is safe here
-      //    because scroll listeners run on the main thread before paint).
       if (stepRef.current === 5 && prevRectTop < -2 && rectTop >= -2) {
-        window.scrollTo(0, window.scrollY + rectTop);
+        if (Math.abs(rectTop) > 0.5) {
+          window.scrollTo(0, window.scrollY + rectTop);
+        }
+        if (document.body.style.overflow !== "hidden") {
+          document.body.style.overflow = "hidden";
+        }
         stepRef.current = 4;
         if (selectedCtaActiveRef.current) {
           handleBackClick();
@@ -488,16 +491,21 @@ export default function DistillationSection() {
         return;
       }
 
-      // ① Downward pin: section has overscrolled above viewport top
-      if (stepRef.current < 5 && rectTop < -0.5) {
-        window.scrollTo(0, window.scrollY + rectTop);
+      // ① Downward pin: lock native scrolling to brutally end momentum without jitter
+      if (stepRef.current < 5 && rectTop <= 0) {
+        if (Math.abs(rectTop) > 0.5) {
+          window.scrollTo(0, window.scrollY + rectTop);
+        }
+        if (document.body.style.overflow !== "hidden") {
+          document.body.style.overflow = "hidden";
+        }
         prevRectTop = rectTop;
         return;
       }
 
-      // ③ Upward pin: momentum carried page above the section (mid-step)
-      if (stepRef.current > 0 && stepRef.current < 5 && rectTop > 0.5) {
-        window.scrollTo(0, window.scrollY + rectTop);
+      // ② Upward re-engagement: if locked at 0 but trying to swipe UP (reverse scroll), unlock it safely.
+      if (stepRef.current === 0 && document.body.style.overflow === "hidden") {
+        document.body.style.overflow = "";
       }
 
       prevRectTop = rectTop;
@@ -819,11 +827,20 @@ export default function DistillationSection() {
       }
 
       if (swipingDown) {
-        if (stepRef.current < 5 && e.cancelable) e.preventDefault(); // trap until all steps done
-        // else: stepRef >= 5 → release to footer
+        // trap until all steps done
+        if (stepRef.current < 5) {
+          if (e.cancelable) e.preventDefault();
+        } else {
+          // If unlocked going down, ensure body allows scrolling
+          if (document.body.style.overflow === "hidden") document.body.style.overflow = "";
+        }
       } else {
-        if ((stepRef.current > 0 || (tls.current[0]?.progress() ?? 0) > 0) && e.cancelable) e.preventDefault();
-        // else: step 0, tl0 clean → release upward to services section
+        if (stepRef.current > 0 || (tls.current[0]?.progress() ?? 0) > 0) {
+          if (e.cancelable) e.preventDefault();
+        } else {
+          // step 0, tl0 clean → release upward to services section
+          if (document.body.style.overflow === "hidden") document.body.style.overflow = "";
+        }
       }
     };
 
@@ -840,30 +857,9 @@ export default function DistillationSection() {
         const deltaY = touchStartY - e.changedTouches[0].clientY;
         if (deltaY < -50) { // swiping up
           const targetY = window.scrollY + rect.top; // section top in page coords
-          window.scrollTo(0, window.scrollY);         // cancel iOS momentum
-          const startY = window.scrollY;
-          const dist   = targetY - startY;             // negative (upward)
-          mobileScrollAnimRef.current = true;
-          stepRef.current = 4; // set before animation so scroll listener is a no-op
-          const finish = () => {
-            mobileScrollAnimRef.current = false;
-            if (selectedCtaActiveRef.current) handleBackClick();
-            else tls.current[4]?.reverse();
-          };
-          if (Math.abs(dist) > 1) {
-            const dur = 420;
-            let t0: number | null = null;
-            const tick = (ts: number) => {
-              if (t0 === null) t0 = ts;
-              const p = Math.min((ts - t0) / dur, 1);
-              window.scrollTo(0, startY + dist * (1 - Math.pow(1 - p, 3)));
-              if (p < 1) requestAnimationFrame(tick);
-              else finish();
-            };
-            requestAnimationFrame(tick);
-          } else {
-            finish();
-          }
+          // No manual JS RAF animating looping — let native momentum or simple snap handle it safely.
+          window.scrollTo({ top: targetY, behavior: "smooth" });
+          stepRef.current = 4; // set before animation so scroll listener safely intercepts and locks bounds natively
         }
         return;
       }
