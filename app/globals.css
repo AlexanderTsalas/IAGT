@@ -48,7 +48,6 @@ body {
   cursor: pointer;
 }
 
-.map-region.hoverable:hover,
 .map-region.active {
   fill: #1c1018;
   stroke: rgba(255, 31, 142, 0.2);
@@ -103,13 +102,19 @@ body {
 .map-animating .connector-animated { animation:  none !important; }
 .map-animating .endpoint-dot       { animation:  none !important; }
 
-/* Active service region highlighting — driven by container class, no React re-render */
+/* Active service region highlighting — instantaneously triggered via CSS :has OR React Container State */
 .active-market-entry      .market-entry,
 .active-commercial-rep    .commercial-rep,
 .active-operational-setup .operational-setup,
 .active-regulatory        .regulatory,
 .active-local-ops         .local-ops,
-.active-business-dev      .business-dev {
+.active-business-dev      .business-dev,
+.rsm-svg:has(.market-entry.hoverable:hover)      .market-entry,
+.rsm-svg:has(.commercial-rep.hoverable:hover)    .commercial-rep,
+.rsm-svg:has(.operational-setup.hoverable:hover) .operational-setup,
+.rsm-svg:has(.regulatory.hoverable:hover)        .regulatory,
+.rsm-svg:has(.local-ops.hoverable:hover)         .local-ops,
+.rsm-svg:has(.business-dev.hoverable:hover)      .business-dev {
   fill: #1c1018;
   stroke: rgba(255, 31, 142, 0.22);
   stroke-width: 0.5;

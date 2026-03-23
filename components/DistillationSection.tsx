@@ -244,10 +244,11 @@ export default function DistillationSection() {
   const prevRectTopRef = useRef(0);
 
   // ── Scroll step state ─────────────────────────────────────────────────────
-  const stepRef          = useRef(0);
-  const isIntroAnimating = useRef(false);
-  const lastScrollTime   = useRef(0);
-  const tls              = useRef<gsap.core.Timeline[]>([]);
+  const stepRef             = useRef(0);
+  const isIntroAnimating    = useRef(false);
+  const lastScrollTime      = useRef(0);
+  const tls                 = useRef<gsap.core.Timeline[]>([]);
+  const mobileScrollAnimRef = useRef(false); // true while a RAF-driven scroll is in progress
 
   // ── Node click handler ────────────────────────────────────────────────────
   const handleNodeClick = (i: number) => {
@@ -421,7 +422,12 @@ export default function DistillationSection() {
     selectedToCtaTlRef.current = miniTl;
   };
 
-  // ── Lenis scroll clamp — prevent overshoot in both directions ────────────
+  // ── Lenis scroll clamp — desktop only ───────────────────────────────────
+  // On mobile the native 'scroll' event fires before the browser paints, so
+  // window.scrollTo() called there corrects the position in the same compositing
+  // frame. useLenis runs in RAF — one frame after the overshoot is already rendered —
+  // which is why it caused visible bounce on iOS. Desktop wheel scroll is Lenis-driven
+  // and needs lenis.stop() so the wheel handler can exclusively drive step navigation.
   useLenis((lenis) => {
     lenisRef.current = lenis;
     const el = wrapperRef.current;
@@ -430,44 +436,76 @@ export default function DistillationSection() {
     const prevRectTop = prevRectTopRef.current;
     prevRectTopRef.current = rectTop;
 
-    // ① Downward overshoot: step machine incomplete, section scrolled above viewport
+    if (window.innerWidth < 768) return; // mobile: handled by scroll listener below
+
+    // ① Downward overshoot
     if (stepRef.current < 5 && rectTop < -2) {
-      // Call window.scrollTo directly — it is synchronous, overrides the scrollTop
-      // Lenis just set this same frame, and immediately cancels iOS momentum scroll.
-      // lenis.scrollTo({ immediate }) only updates internal state; the DOM update is
-      // deferred to the next RAF, causing a one-frame lag that produces visible stutter.
-      window.scrollTo(0, window.scrollY + rectTop);
-      // Desktop: stop Lenis so the wheel handler exclusively drives step navigation.
-      // Mobile: keep Lenis running — stopping it would prevent this clamp from
-      // firing on subsequent frames, letting native momentum carry past the section.
-      if (window.innerWidth >= 768) lenis.stop();
+      lenis.scrollTo(lenis.scroll + rectTop, { immediate: true });
+      lenis.stop();
       return;
     }
 
-    // ② Upward re-engagement: step machine was complete, section crossing back into
-    //    viewport from below (prevRectTop was negative, rectTop is crossing -2→0)
+    // ② Upward re-engagement
     if (stepRef.current === 5 && prevRectTop < -2 && rectTop >= -2) {
-      window.scrollTo(0, window.scrollY + rectTop);
-      if (window.innerWidth >= 768) lenis.stop();
+      lenis.scrollTo(lenis.scroll + rectTop, { immediate: true });
+      lenis.stop();
       stepRef.current = 4;
       if (selectedCtaActiveRef.current) {
-        // Came from the selectedIndustry→CTA path: tls[4] was never built.
-        // handleBackClick handles full cleanup (handshake, icon, nodes) correctly.
         handleBackClick();
       } else {
         tls.current[4]?.reverse();
       }
-      return;
-    }
-
-    // ③ Upward overshoot (mobile): mid-step, momentum carried page above the section
-    //    so the distillation section has slid below the viewport top (rectTop > 5).
-    //    Snap back so the section stays pinned at viewport top between steps.
-    if (stepRef.current > 0 && stepRef.current < 5 && rectTop > 5) {
-      window.scrollTo(0, window.scrollY + rectTop);
-      // No lenis.stop() — keep clamp active for subsequent momentum frames.
     }
   });
+
+  // ── Mobile scroll pinning — native scroll listener ────────────────────────
+  // 'scroll' events fire before the paint for that frame. Calling window.scrollTo()
+  // here cancels iOS momentum within the same compositing cycle — no rendered
+  // bounce frame, unlike the RAF-based useLenis approach above.
+  useEffect(() => {
+    let prevRectTop = 0;
+
+    const onScroll = () => {
+      if (window.innerWidth >= 768) return;
+      // Skip while a programmatic RAF scroll animation is driving the position
+      if (mobileScrollAnimRef.current) return;
+      const el = wrapperRef.current;
+      if (!el) return;
+      const rectTop = el.getBoundingClientRect().top;
+
+      // ② Re-engagement: section crossing back into viewport from below.
+      //    Correct position AND trigger step reversal (state change is safe here
+      //    because scroll listeners run on the main thread before paint).
+      if (stepRef.current === 5 && prevRectTop < -2 && rectTop >= -2) {
+        window.scrollTo(0, window.scrollY + rectTop);
+        stepRef.current = 4;
+        if (selectedCtaActiveRef.current) {
+          handleBackClick();
+        } else {
+          tls.current[4]?.reverse();
+        }
+        prevRectTop = rectTop;
+        return;
+      }
+
+      // ① Downward pin: section has overscrolled above viewport top
+      if (stepRef.current < 5 && rectTop < -0.5) {
+        window.scrollTo(0, window.scrollY + rectTop);
+        prevRectTop = rectTop;
+        return;
+      }
+
+      // ③ Upward pin: momentum carried page above the section (mid-step)
+      if (stepRef.current > 0 && stepRef.current < 5 && rectTop > 0.5) {
+        window.scrollTo(0, window.scrollY + rectTop);
+      }
+
+      prevRectTop = rectTop;
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // ── CTA timeline builder (called lazily, after panels are mounted) ────────
   const buildCtaTl = () => {
@@ -765,33 +803,72 @@ export default function DistillationSection() {
       const rect = wrapperRef.current?.getBoundingClientRect();
       if (!rect || Math.abs(rect.top) > 5) return; // section not at top — let native scroll handle it
 
-      if (isIntroAnimating.current) { e.preventDefault(); return; }
+      if (isIntroAnimating.current) { if (e.cancelable) e.preventDefault(); return; }
       if (
         tls.current[2]?.isActive() || tls.current[3]?.isActive() ||
         tls.current[4]?.isActive() || selectedToCtaTlRef.current?.isActive()
-      ) { e.preventDefault(); return; }
+      ) { if (e.cancelable) e.preventDefault(); return; }
 
       const currentY    = e.touches[0].clientY;
       const swipingDown = (touchStartY - currentY) > 0;
 
       if (selectedIndexRef.current !== null || isSelectingRef.current) {
         if (!isSelectingRef.current && swipingDown && selectedCtaActiveRef.current) return; // release to footer
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         return;
       }
 
       if (swipingDown) {
-        if (stepRef.current < 5) e.preventDefault(); // trap until all steps done
+        if (stepRef.current < 5 && e.cancelable) e.preventDefault(); // trap until all steps done
         // else: stepRef >= 5 → release to footer
       } else {
-        if (stepRef.current > 0 || (tls.current[0]?.progress() ?? 0) > 0) e.preventDefault();
+        if ((stepRef.current > 0 || (tls.current[0]?.progress() ?? 0) > 0) && e.cancelable) e.preventDefault();
         // else: step 0, tl0 clean → release upward to services section
       }
     };
 
     const onTouchEnd = (e: TouchEvent) => {
       const rect = wrapperRef.current?.getBoundingClientRect();
-      if (!rect || Math.abs(rect.top) > 5) return;
+      if (!rect) return;
+
+      // ── Footer → distillation re-engagement (mobile) ──────────────────────
+      // When all 5 steps are done and the user swipes up from the footer,
+      // cancel iOS momentum synchronously (window.scrollTo in touchend fires
+      // before the compositor starts the momentum animation) then RAF-animate
+      // back to the distillation section top.
+      if (window.innerWidth < 768 && stepRef.current === 5 && rect.top < -5) {
+        const deltaY = touchStartY - e.changedTouches[0].clientY;
+        if (deltaY < -50) { // swiping up
+          const targetY = window.scrollY + rect.top; // section top in page coords
+          window.scrollTo(0, window.scrollY);         // cancel iOS momentum
+          const startY = window.scrollY;
+          const dist   = targetY - startY;             // negative (upward)
+          mobileScrollAnimRef.current = true;
+          stepRef.current = 4; // set before animation so scroll listener is a no-op
+          const finish = () => {
+            mobileScrollAnimRef.current = false;
+            if (selectedCtaActiveRef.current) handleBackClick();
+            else tls.current[4]?.reverse();
+          };
+          if (Math.abs(dist) > 1) {
+            const dur = 420;
+            let t0: number | null = null;
+            const tick = (ts: number) => {
+              if (t0 === null) t0 = ts;
+              const p = Math.min((ts - t0) / dur, 1);
+              window.scrollTo(0, startY + dist * (1 - Math.pow(1 - p, 3)));
+              if (p < 1) requestAnimationFrame(tick);
+              else finish();
+            };
+            requestAnimationFrame(tick);
+          } else {
+            finish();
+          }
+        }
+        return;
+      }
+
+      if (Math.abs(rect.top) > 5) return;
       if (isIntroAnimating.current) return;
       if (
         tls.current[2]?.isActive() || tls.current[3]?.isActive() ||

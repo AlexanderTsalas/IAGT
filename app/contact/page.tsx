@@ -73,17 +73,10 @@ export default function ContactPage() {
         <Header rightLabel="Home" rightHref="/" />
 
         {/* ── Main content ── */}
-        <main style={{
-          flex: 1, display: "flex", alignItems: "stretch",
-          paddingTop: "64px", minHeight: "100vh",
-        }}>
+        <main className="flex-1 flex flex-col lg:flex-row items-stretch pt-[64px] min-h-screen">
 
           {/* ── Left panel — market context ── */}
-          <div style={{
-            flex: 1, display: "flex", flexDirection: "column", justifyContent: "center",
-            padding: "5vh 6% 5vh 8%",
-            borderRight: "1px solid rgba(255,31,142,0.12)",
-          }}>
+          <div className="flex-1 flex flex-col justify-center px-6 lg:px-[6%] lg:pl-[8%] py-12 lg:py-[5vh] border-b lg:border-b-0 lg:border-r border-[#ff1f8e]/10">
             <span style={{ fontSize: "0.72rem", letterSpacing: "0.28em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>
               Market Context
             </span>
@@ -95,13 +88,13 @@ export default function ContactPage() {
             </p>
 
             {/* Metric grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.4rem", marginBottom: "2.75rem" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-[1.4rem] mb-[2.75rem]">
               {METRICS.map((m, i) => (
-                <div key={i} style={{ borderTop: "1px solid rgba(255,31,142,0.2)", paddingTop: "1rem" }}>
-                  <div style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.4rem)", fontWeight: 200, color: "white", lineHeight: 1, marginBottom: "0.35rem" }}>
+                <div key={i} className="border-t border-[#ff1f8e]/20 pt-[1rem]">
+                  <div className="text-[clamp(1.8rem,2.8vw,2.4rem)] font-light text-white leading-none mb-[0.35rem]">
                     <span ref={el => { metricRefs.current[i] = el; }}>{m.prefix}0{m.suffix}</span>
                   </div>
-                  <div style={{ fontSize: "0.72rem", letterSpacing: "0.1em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500, marginBottom: "0.3rem" }}>
+                  <div className="text-[0.72rem] tracking-[0.1em] text-[var(--pink)] uppercase font-medium mb-[0.3rem]">
                     {m.label}
                   </div>
                   <div style={{ fontSize: "0.78rem", fontWeight: 300, color: "rgba(255,255,255,0.38)", lineHeight: 1.5 }}>
@@ -112,20 +105,18 @@ export default function ContactPage() {
             </div>
 
             {/* CTAs */}
-            <div style={{ display: "flex", gap: "1rem" }}>
+            <div className="flex flex-col sm:flex-row gap-4">
               <a
                 href="mailto:hello@iagt.com"
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "13px 0", background: "var(--pink)", color: "white", fontSize: "0.78rem", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 500, borderRadius: "5px", textDecoration: "none", transition: "opacity 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                style={{ background: "var(--pink)", transition: "opacity 0.2s" }}
+                className="flex-1 flex items-center justify-center py-[13px] text-white text-[0.78rem] tracking-[0.12em] uppercase font-medium rounded-[5px] no-underline hover:opacity-85"
               >
                 Direct Contact
               </a>
               <a
                 href="/capabilities-deck.pdf"
-                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "13px 0", background: "transparent", border: "1px solid rgba(255,31,142,0.45)", color: "rgba(255,255,255,0.85)", fontSize: "0.78rem", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 400, borderRadius: "5px", textDecoration: "none", transition: "border-color 0.2s, color 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,31,142,0.9)"; e.currentTarget.style.color = "white"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,31,142,0.45)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; }}
+                style={{ background: "transparent", transition: "border-color 0.2s, color 0.2s" }}
+                className="flex-1 flex items-center justify-center py-[13px] border border-[#ff1f8e]/45 text-white/85 text-[0.78rem] tracking-[0.12em] uppercase font-normal rounded-[5px] no-underline hover:border-[#ff1f8e]/90 hover:text-white"
               >
                 Capabilities Deck
               </a>
@@ -133,10 +124,7 @@ export default function ContactPage() {
           </div>
 
           {/* ── Right panel — form ── */}
-          <div style={{
-            flex: 1, display: "flex", flexDirection: "column", justifyContent: "center",
-            padding: "5vh 8% 5vh 6%",
-          }}>
+          <div className="flex-1 flex flex-col justify-center px-6 lg:px-[8%] lg:pr-[6%] py-12 lg:py-[5vh]">
             <span style={{ fontSize: "0.72rem", letterSpacing: "0.28em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500, display: "block", marginBottom: "0.5rem" }}>
               Get in Touch
             </span>
@@ -148,12 +136,13 @@ export default function ContactPage() {
             </p>
 
             {/* Submission type toggle */}
-            <div style={{ display: "flex", marginBottom: "1.4rem", border: "1px solid rgba(255,31,142,0.25)", borderRadius: "6px", overflow: "hidden" }}>
+            <div className="flex flex-col sm:flex-row mb-[1.4rem] border border-[#ff1f8e]/25 rounded-md overflow-hidden">
               {(["Appointment Booking", "Message", "Capabilities Deck"] as FormType[]).map((t, idx, arr) => (
                 <button
                   key={t}
                   onClick={() => setFormType(t)}
-                  style={{ flex: 1, padding: "9px 4px", fontSize: "0.7rem", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 400, background: formType === t ? "rgba(255,31,142,0.15)" : "transparent", color: formType === t ? "white" : "rgba(255,255,255,0.45)", border: "none", borderRight: idx < arr.length - 1 ? "1px solid rgba(255,31,142,0.25)" : "none", cursor: "pointer", transition: "background 0.2s, color 0.2s", fontFamily: "inherit" }}
+                  style={{ background: formType === t ? "rgba(255,31,142,0.15)" : "transparent", color: formType === t ? "white" : "rgba(255,255,255,0.45)", fontFamily: "inherit" }}
+                  className={`flex-1 py-[11px] px-2 text-[0.65rem] sm:text-[0.7rem] tracking-[0.08em] uppercase font-normal border-none cursor-pointer transition-colors duration-200 ${idx < arr.length - 1 ? "border-b sm:border-b-0 sm:border-r border-[#ff1f8e]/25" : ""}`}
                 >
                   {t}
                 </button>
@@ -179,11 +168,11 @@ export default function ContactPage() {
                 }}
                 style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}
               >
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[0.85rem]">
                   <input className="contact-input" placeholder="Full Name" required value={formData.name}    onChange={e => setFormData(p => ({ ...p, name:    e.target.value }))} />
                   <input className="contact-input" placeholder="Company Legal Name" required value={formData.company} onChange={e => setFormData(p => ({ ...p, company: e.target.value }))} />
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[0.85rem]">
                   <input className="contact-input" type="email" placeholder="Email" required value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} />
                   <input className="contact-input" type="tel" placeholder="Phone (optional)" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} />
                 </div>

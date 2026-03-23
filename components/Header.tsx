@@ -196,41 +196,55 @@ const Header = forwardRef<HTMLElement, HeaderProps>(
             />
             
             <div 
-              className="md:hidden fixed top-0 right-0 w-[85vw] max-w-[360px] h-full bg-[#111113] border-l border-white/5 flex flex-col py-24 px-8 gap-8 shadow-2xl overflow-y-auto"
+              className="md:hidden fixed top-0 right-0 w-[85vw] max-w-[360px] h-[100dvh] bg-[#111113] border-l border-white/5 flex flex-col shadow-2xl"
               style={{ 
                 zIndex: 201,
                 transform: mobileMenuOpen ? "translateX(0)" : "translateX(100%)",
                 transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
               }}
             >
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                className="absolute top-6 right-6 text-white p-2 hover:bg-white/10 rounded-full transition-colors bg-transparent border-none cursor-pointer"
-                aria-label="Close mobile menu"
-              >
-                <div style={{ position: "relative", width: "24px", height: "24px" }}>
-                  <div style={{ position: "absolute", top: "11px", left: 0, width: "100%", height: "2px", backgroundColor: "white", transform: "rotate(45deg)" }} />
-                  <div style={{ position: "absolute", top: "11px", left: 0, width: "100%", height: "2px", backgroundColor: "white", transform: "rotate(-45deg)" }} />
-                </div>
-              </button>
-
-              <Link href="/news" onClick={() => setMobileMenuOpen(false)} style={{ color: "white", fontSize: "1.2rem", letterSpacing: "0.1em", textDecoration: "none" }}>Market News</Link>
-              <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.1)" }} />
-              <h3 style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem", letterSpacing: "0.2em", marginBottom: "-0.5rem" }}>SERVICES</h3>
-              {services.map((s, i) => (
-                <Link
-                  key={s.id}
-                  href={`/services/${s.id}`}
+              {/* Static Header Area */}
+              <div className="flex justify-end p-6 shrink-0 h-[88px]">
+                <button 
                   onClick={() => setMobileMenuOpen(false)}
-                  style={{ color: "rgba(255,255,255,0.8)", fontSize: "1rem", textDecoration: "none" }}
+                  className="text-white p-2 hover:bg-white/10 rounded-full transition-colors bg-transparent border-none cursor-pointer"
+                  aria-label="Close mobile menu"
                 >
-                  {s.title}
+                  <div style={{ position: "relative", width: "24px", height: "24px" }}>
+                    <div style={{ position: "absolute", top: "11px", left: 0, width: "100%", height: "2px", backgroundColor: "white", transform: "rotate(45deg)" }} />
+                    <div style={{ position: "absolute", top: "11px", left: 0, width: "100%", height: "2px", backgroundColor: "white", transform: "rotate(-45deg)" }} />
+                  </div>
+                </button>
+              </div>
+
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto flex flex-col px-8 pb-12 gap-8">
+                <Link href="/news" onClick={() => setMobileMenuOpen(false)} style={{ color: "white", fontSize: "1.2rem", letterSpacing: "0.1em", textDecoration: "none" }}>Market News</Link>
+                <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.1)" }} />
+                
+                <h3 style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem", letterSpacing: "0.2em", marginBottom: "-0.5rem" }}>SERVICES</h3>
+                {services.map((s, i) => (
+                  <Link
+                    key={s.id}
+                    href={`/services/${s.id}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ color: "rgba(255,255,255,0.8)", fontSize: "1rem", textDecoration: "none" }}
+                  >
+                    {s.title}
+                  </Link>
+                ))}
+                
+                <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.1)", marginTop: "0.5rem" }} />
+                
+                <Link 
+                  href={rightHref} 
+                  onClick={() => setMobileMenuOpen(false)} 
+                  className="mt-6 mb-8"
+                  style={{ color: "var(--pink)", fontSize: "1rem", letterSpacing: "0.1em", textDecoration: "none", border: "1px solid var(--pink)", padding: "12px 32px", borderRadius: "4px", textAlign: "center", display: "block" }}
+                >
+                  {rightLabel}
                 </Link>
-              ))}
-              <div style={{ width: "40px", height: "1px", background: "rgba(255,255,255,0.1)", marginTop: "0.5rem" }} />
-              <Link href={rightHref} onClick={() => setMobileMenuOpen(false)} style={{ color: "var(--pink)", fontSize: "1rem", letterSpacing: "0.1em", textDecoration: "none", border: "1px solid var(--pink)", padding: "12px 32px", borderRadius: "4px", marginTop: "auto", textAlign: "center" }}>
-                {rightLabel}
-              </Link>
+              </div>
             </div>
           </>,
           document.body

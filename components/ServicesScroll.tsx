@@ -372,13 +372,13 @@ export default function ServicesScroll({ initialService }: { initialService?: st
     const onTouchMove = (e: TouchEvent) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect || Math.abs(rect.top) > 5) return;
-      if (isAnimating.current) { e.preventDefault(); return; }
+      if (isAnimating.current) { if (e.cancelable) e.preventDefault(); return; }
       const currentY   = e.touches[0].clientY;
       const swipingDown = (touchStartY - currentY) > 0;
       const atBottom = currentIndexRef.current === services.length - 1 && swipingDown;
       const atTop    = currentIndexRef.current === -1 && !swipingDown;
       if (atBottom || atTop) return; // release to native scroll
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
     };
 
     const onTouchEnd = (e: TouchEvent) => {
@@ -390,7 +390,29 @@ export default function ServicesScroll({ initialService }: { initialService?: st
       const swipingDown = deltaY > 0;
       const atBottom = currentIndexRef.current === services.length - 1 && swipingDown;
       const atTop    = currentIndexRef.current === -1 && !swipingDown;
-      if (atBottom || atTop) return;
+      if (atTop) return;
+      if (atBottom) {
+        if (window.innerWidth < 768) {
+          // Cancel iOS momentum synchronously before the compositor starts it,
+          // then RAF-animate smoothly to the distillation section top.
+          const targetY = window.scrollY + rect.top + rect.height; // container bottom = distillation top
+          window.scrollTo(0, window.scrollY); // cancels pending momentum
+          const startY = window.scrollY;
+          const dist   = targetY - startY;
+          if (dist > 1) {
+            const dur = 420;
+            let t0: number | null = null;
+            const tick = (ts: number) => {
+              if (t0 === null) t0 = ts;
+              const p = Math.min((ts - t0) / dur, 1);
+              window.scrollTo(0, startY + dist * (1 - Math.pow(1 - p, 3)));
+              if (p < 1) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+          }
+        }
+        return;
+      }
       goToSection(currentIndexRef.current + (swipingDown ? 1 : -1));
     };
 
@@ -509,35 +531,47 @@ export default function ServicesScroll({ initialService }: { initialService?: st
                     top:     endY - 28,
                     width:   BOX_W,
                     cursor:  "default",
-                    background: isHov ? "rgba(26,10,18,0.97)" : "rgba(17,17,19,0.93)",
-                    border: `1px solid ${isHov ? "rgba(255,31,142,0.7)" : "rgba(255,31,142,0.28)"}`,
-                    borderRadius: 6,
-                    padding: "12px 15px",
-                    boxShadow: isHov ? "0 0 18px rgba(255,31,142,0.18)" : "none",
+                    background: isHov 
+                      ? "linear-gradient(135deg, rgba(45,45,50,0.7) 0%, rgba(22,22,25,0.9) 100%)" 
+                      : "linear-gradient(135deg, rgba(35,35,40,0.6) 0%, rgba(17,17,19,0.85) 100%)",
+                    border: `1px solid ${isHov ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)"}`,
+                    borderRadius: 10,
+                    padding: "12px 16px",
+                    boxShadow: isHov 
+                      ? "0 8px 32px rgba(0,0,0,0.6), 0 0 16px rgba(255,31,142,0.15), inset 0 1px 1px rgba(255,255,255,0.12)" 
+                      : "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
                     animation: "pinFadeIn 0.25s ease forwards",
                     animationDelay: `${i * 0.06}s`,
                     opacity: 0,
-                    transition: "border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease",
+                    transition: "border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <Icon size={14} color="var(--pink)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 6 }}>
+                    <div style={{ marginTop: 2 }}>
+                      <Icon size={14} color={isHov ? "var(--pink-light)" : "var(--pink)"} strokeWidth={isHov ? 2.0 : 1.5} style={{ flexShrink: 0, filter: isHov ? "drop-shadow(0 0 6px var(--pink))" : "none", transition: "all 0.2s ease" }} />
+                    </div>
                     <span style={{
-                      color: isHov ? "white" : "rgba(255,255,255,0.88)",
-                      fontSize: 13.5,
-                      fontWeight: 600,
-                      letterSpacing: "0.04em",
-                      lineHeight: 1,
+                      color: isHov ? "white" : "rgba(255,255,255,0.9)",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      letterSpacing: "0.03em",
+                      lineHeight: 1.25,
+                      textTransform: "uppercase",
+                      transition: "color 0.2s ease",
                     }}>
                       {pin.label}
                     </span>
                   </div>
                   <p style={{
-                    color: isHov ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.48)",
-                    fontSize: 12,
+                    color: isHov ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.55)",
+                    fontSize: 11.5,
                     lineHeight: 1.5,
                     margin: 0,
                     fontWeight: 300,
+                    paddingLeft: 24, // aligns perfectly with text under icon offset
+                    transition: "color 0.2s ease",
                   }}>
                     {pin.description}
                   </p>

@@ -151,15 +151,33 @@ const DynamicLayer = memo(({ highlighted, hoveredService, activeService, hovered
           <g pointerEvents="none">
             <path
               d={dir.path}
-              stroke={isHovered ? "rgba(255,31,142,0.85)" : "rgba(255,31,142,0.4)"}
-              strokeWidth={(isHovered ? 0.9 : 0.6) / mapScale}
+              stroke={isHovered ? "var(--pink)" : "rgba(255,31,142,0.3)"}
+              strokeWidth={(isHovered ? 1.0 : 0.6) / mapScale}
+              strokeDasharray={isHovered ? "none" : `${2.5 / mapScale} ${2.5 / mapScale}`}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
+              style={{
+                transition: "all 0.3s ease",
+                filter: isHovered ? "drop-shadow(0 0 4px rgba(255,31,142,0.7))" : "none",
+              }}
             />
-            <circle r={1.8 / mapScale} fill={isHovered ? "var(--pink)" : "rgba(255,31,142,0.5)"} />
-            <circle cx={dir.cx} cy={dir.cy} r={1.2 / mapScale}
-              fill={isHovered ? "rgba(255,31,142,0.9)" : "rgba(255,31,142,0.35)"}
+            <circle 
+              r={(isHovered ? 2.5 : 1.5) / mapScale} 
+              fill={isHovered ? "var(--pink)" : "rgba(255,31,142,0.4)"} 
+              stroke={isHovered ? "white" : "transparent"}
+              strokeWidth={(isHovered ? 0.6 : 0) / mapScale}
+              style={{
+                transition: "all 0.3s ease",
+                filter: isHovered ? "drop-shadow(0 0 4px var(--pink))" : "none",
+              }}
+            />
+            <circle 
+              cx={dir.cx} 
+              cy={dir.cy} 
+              r={(isHovered ? 1.5 : 1.0) / mapScale}
+              fill={isHovered ? "white" : "rgba(255,31,142,0.3)"}
+              style={{ transition: "all 0.3s ease" }}
             />
           </g>
         </Marker>
@@ -177,23 +195,39 @@ const DynamicLayer = memo(({ highlighted, hoveredService, activeService, hovered
             transition: "opacity 0.25s ease, transform 0.25s ease",
             pointerEvents: "none",
           }}>
-            <foreignObject x={10} y={-32} width={165} height={72}>
-              <div style={{
-                background: "rgba(17,17,19,0.93)",
-                border: "1px solid var(--pink)",
-                borderRadius: "8px",
-                padding: "8px 12px",
-                backdropFilter: "blur(10px)",
-              }}>
-                <p style={{ color: "var(--pink)", fontSize: "9.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
-                  {service.region}
-                </p>
-                <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "11px", margin: "3px 0 0", lineHeight: 1.35 }}>
-                  {service.shortDescription}
-                </p>
+            <foreignObject x={14} y={-40} width={240} height={110}>
+              <div 
+                className="flex flex-col justify-center h-full w-full px-4"
+              >
+                <div style={{
+                  background: "linear-gradient(135deg, rgba(35,35,40,0.6) 0%, rgba(17,17,19,0.85) 100%)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "10px",
+                  padding: "10px 14px",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                }}>
+                  <div className="flex items-start gap-2 mb-1.5 mt-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--pink)] shadow-[0_0_8px_var(--pink)] shrink-0 mt-[4px]" />
+                    <p style={{ color: "var(--pink)", fontSize: "0.55rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", margin: 0, lineHeight: 1.3 }}>
+                      {service.title}
+                    </p>
+                  </div>
+                  <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.7rem", fontWeight: 300, margin: 0, lineHeight: 1.45 }}>
+                    {service.shortDescription}
+                  </p>
+                </div>
               </div>
             </foreignObject>
-            <line x1={0} y1={0} x2={10} y2={-12} stroke="var(--pink)" strokeWidth={1} strokeDasharray="2 2" />
+            <path 
+              d="M 0 0 L 10 -15 L 14 -15" 
+              stroke="rgba(255,255,255,0.2)" 
+              strokeWidth={1} 
+              fill="none" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+            />
           </g>
         </Marker>
       );
