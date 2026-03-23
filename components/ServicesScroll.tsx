@@ -111,6 +111,7 @@ export default function ServicesScroll({ initialService }: { initialService?: st
     ? getRegionTransform(REGION_BBOX[services[initialIdx].id as ServiceId])
     : null;
 
+
   const containerRef    = useRef<HTMLDivElement>(null);
   const parallaxMapRef  = useRef<HTMLDivElement>(null);
   const parallaxContentRef = useRef<HTMLDivElement>(null);
@@ -357,6 +358,10 @@ export default function ServicesScroll({ initialService }: { initialService?: st
   }, [goToSection]);
 
   // ── Touch → discrete step (mobile swipe) ────────────────────────────────
+  // Exact mirror of the wheel handler: at boundary (atBottom / atTop) we
+  // simply return without calling e.preventDefault(), which releases native
+  // scroll so the distillation section's ScrollTrigger animations fire
+  // naturally — identical to how desktop wheel-scroll works.
   useEffect(() => {
     let touchStartY = 0;
 
@@ -365,34 +370,31 @@ export default function ServicesScroll({ initialService }: { initialService?: st
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      // Only intercept when the section is pinned at the top of the viewport
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect || Math.abs(rect.top) > 5) return;
-      // Prevent native scroll from moving the page while we handle navigation
+      if (isAnimating.current) { e.preventDefault(); return; }
+      const currentY   = e.touches[0].clientY;
+      const swipingDown = (touchStartY - currentY) > 0;
+      const atBottom = currentIndexRef.current === services.length - 1 && swipingDown;
+      const atTop    = currentIndexRef.current === -1 && !swipingDown;
+      if (atBottom || atTop) return; // release to native scroll
       e.preventDefault();
     };
 
     const onTouchEnd = (e: TouchEvent) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect || Math.abs(rect.top) > 5) return;
-
       if (isAnimating.current) return;
-
-      // deltaY > 0 means finger moved up → user is swiping up → scroll down
       const deltaY = touchStartY - e.changedTouches[0].clientY;
-      const SWIPE_THRESHOLD = 50;
-      if (Math.abs(deltaY) < SWIPE_THRESHOLD) return;
-
+      if (Math.abs(deltaY) < 50) return;
       const swipingDown = deltaY > 0;
       const atBottom = currentIndexRef.current === services.length - 1 && swipingDown;
       const atTop    = currentIndexRef.current === -1 && !swipingDown;
       if (atBottom || atTop) return;
-
       goToSection(currentIndexRef.current + (swipingDown ? 1 : -1));
     };
 
     window.addEventListener("touchstart", onTouchStart, { passive: true });
-    // passive: false required so we can call preventDefault on touchmove
     window.addEventListener("touchmove",  onTouchMove,  { capture: true, passive: false });
     window.addEventListener("touchend",   onTouchEnd,   { passive: true });
 

@@ -142,11 +142,11 @@ const TARGET_Y = 520;
 // Node positions [x, y]: top, left-upper, left-lower, bottom, right-lower, right-upper
 const INDUSTRY_POS: [number, number][] = [
   [500,  22],  // 0 – top         (Technology)
-  [ 72, 120],  // 1 – left-upper  (AI)
-  [ 72, 480],  // 2 – left-lower  (Data Centers)
+  [115, 120],  // 1 – left-upper  (AI)
+  [115, 480],  // 2 – left-lower  (Data Centers)
   [500, 578],  // 3 – bottom      (Infrastructure)
-  [928, 480],  // 4 – right-lower (Energy)
-  [928, 120],  // 5 – right-upper (Telecom)
+  [885, 480],  // 4 – right-lower (Energy)
+  [885, 120],  // 5 – right-upper (Telecom)
 ];
 
 const INDUSTRY_EDGES: { d: string; grad: string }[] = [
@@ -154,13 +154,13 @@ const INDUSTRY_EDGES: { d: string; grad: string }[] = [
   { d: `M 500 245 L 500 197`, grad: "url(#g-tech-lower)" },  // 0 center→below text
   { d: `M 500 173 L 500 64`,  grad: "url(#g-tech-upper)" },  // 1 above text→near node
   // Diagonals
-  { d: `M 449 279 C 340 279, 190 150, 111 136`, grad: "url(#edgeGlow)" },  // 2 AI
-  { d: `M 449 321 C 340 321, 190 450, 111 464`, grad: "url(#edgeGlow)" },  // 3 Data Centers
+  { d: `M 449 279 C 340 279, 233 150, 154 136`, grad: "url(#edgeGlow)" },  // 2 AI
+  { d: `M 449 321 C 340 321, 233 450, 154 464`, grad: "url(#edgeGlow)" },  // 3 Data Centers
   // Infrastructure — split around "Industries" text
   { d: `M 500 355 L 500 403`, grad: "url(#g-infra-upper)" }, // 4 center→above text
   { d: `M 500 427 L 500 536`, grad: "url(#g-infra-lower)" }, // 5 below text→near node
-  { d: `M 551 321 C 660 321, 810 450, 889 464`, grad: "url(#edgeGlow)" },  // 6 Energy
-  { d: `M 551 279 C 660 279, 810 150, 889 136`, grad: "url(#edgeGlow)" },  // 7 Telecom
+  { d: `M 551 321 C 660 321, 767 450, 846 464`, grad: "url(#edgeGlow)" },  // 6 Energy
+  { d: `M 551 279 C 660 279, 767 150, 846 136`, grad: "url(#edgeGlow)" },  // 7 Telecom
 ];
 
 const IN_SIX_Y     = 177;
@@ -432,16 +432,23 @@ export default function DistillationSection() {
 
     // ① Downward overshoot: step machine incomplete, section scrolled above viewport
     if (stepRef.current < 5 && rectTop < -2) {
-      lenis.scrollTo(lenis.scroll + rectTop, { immediate: true });
-      lenis.stop();
+      // Call window.scrollTo directly — it is synchronous, overrides the scrollTop
+      // Lenis just set this same frame, and immediately cancels iOS momentum scroll.
+      // lenis.scrollTo({ immediate }) only updates internal state; the DOM update is
+      // deferred to the next RAF, causing a one-frame lag that produces visible stutter.
+      window.scrollTo(0, window.scrollY + rectTop);
+      // Desktop: stop Lenis so the wheel handler exclusively drives step navigation.
+      // Mobile: keep Lenis running — stopping it would prevent this clamp from
+      // firing on subsequent frames, letting native momentum carry past the section.
+      if (window.innerWidth >= 768) lenis.stop();
       return;
     }
 
     // ② Upward re-engagement: step machine was complete, section crossing back into
     //    viewport from below (prevRectTop was negative, rectTop is crossing -2→0)
     if (stepRef.current === 5 && prevRectTop < -2 && rectTop >= -2) {
-      lenis.scrollTo(lenis.scroll + rectTop, { immediate: true });
-      lenis.stop();
+      window.scrollTo(0, window.scrollY + rectTop);
+      if (window.innerWidth >= 768) lenis.stop();
       stepRef.current = 4;
       if (selectedCtaActiveRef.current) {
         // Came from the selectedIndustry→CTA path: tls[4] was never built.
@@ -450,6 +457,15 @@ export default function DistillationSection() {
       } else {
         tls.current[4]?.reverse();
       }
+      return;
+    }
+
+    // ③ Upward overshoot (mobile): mid-step, momentum carried page above the section
+    //    so the distillation section has slid below the viewport top (rectTop > 5).
+    //    Snap back so the section stays pinned at viewport top between steps.
+    if (stepRef.current > 0 && stepRef.current < 5 && rectTop > 5) {
+      window.scrollTo(0, window.scrollY + rectTop);
+      // No lenis.stop() — keep clamp active for subsequent momentum frames.
     }
   });
 
@@ -735,6 +751,112 @@ export default function DistillationSection() {
     };
   }, []);
 
+  // ── Touch → discrete steps (mobile) ──────────────────────────────────────
+  // Mirrors the wheel handler: trap scroll while steps are incomplete, release
+  // at boundaries — identical logic to how desktop wheel-scroll works.
+  useEffect(() => {
+    let touchStartY = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      if (!rect || Math.abs(rect.top) > 5) return; // section not at top — let native scroll handle it
+
+      if (isIntroAnimating.current) { e.preventDefault(); return; }
+      if (
+        tls.current[2]?.isActive() || tls.current[3]?.isActive() ||
+        tls.current[4]?.isActive() || selectedToCtaTlRef.current?.isActive()
+      ) { e.preventDefault(); return; }
+
+      const currentY    = e.touches[0].clientY;
+      const swipingDown = (touchStartY - currentY) > 0;
+
+      if (selectedIndexRef.current !== null || isSelectingRef.current) {
+        if (!isSelectingRef.current && swipingDown && selectedCtaActiveRef.current) return; // release to footer
+        e.preventDefault();
+        return;
+      }
+
+      if (swipingDown) {
+        if (stepRef.current < 5) e.preventDefault(); // trap until all steps done
+        // else: stepRef >= 5 → release to footer
+      } else {
+        if (stepRef.current > 0 || (tls.current[0]?.progress() ?? 0) > 0) e.preventDefault();
+        // else: step 0, tl0 clean → release upward to services section
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      if (!rect || Math.abs(rect.top) > 5) return;
+      if (isIntroAnimating.current) return;
+      if (
+        tls.current[2]?.isActive() || tls.current[3]?.isActive() ||
+        tls.current[4]?.isActive() || selectedToCtaTlRef.current?.isActive()
+      ) return;
+
+      const deltaY = touchStartY - e.changedTouches[0].clientY;
+      if (Math.abs(deltaY) < 50) return;
+
+      const swipingDown = deltaY > 0;
+      const now = Date.now();
+
+      // ── Selected-industry state ────────────────────────────────────────────
+      if (selectedIndexRef.current !== null || isSelectingRef.current) {
+        if (!isSelectingRef.current && swipingDown && selectedCtaActiveRef.current) {
+          stepRef.current = 5; // useLenis clamp stops pinning → natural scroll to footer
+          return;
+        }
+        if (isSelectingRef.current) return;
+        if (now - lastScrollTime.current < 250) return;
+        lastScrollTime.current = now;
+        if (swipingDown && !selectedCtaActiveRef.current) handleSelectedToCta();
+        else if (!swipingDown) handleBackClick();
+        return;
+      }
+
+      // ── Normal step navigation ─────────────────────────────────────────────
+      if (swipingDown) {
+        if (stepRef.current < 5) {
+          if (now - lastScrollTime.current < 250) return;
+          lastScrollTime.current = now;
+          if (stepRef.current === 4) {
+            flushSync(() => setCtaMounted(true));
+            const ctaTl = buildCtaTl();
+            tls.current[4] = ctaTl;
+            ctaTl.play();
+          } else {
+            tls.current[stepRef.current]?.play();
+          }
+          stepRef.current++;
+          // When stepRef reaches 5, useLenis clamp stops pinning → natural scroll resumes
+        }
+        // stepRef >= 5: touchmove already released → natural scroll to footer
+      } else {
+        if (stepRef.current > 0) {
+          if (now - lastScrollTime.current < 250) return;
+          lastScrollTime.current = now;
+          stepRef.current--;
+          tls.current[stepRef.current]?.reverse();
+        }
+        // stepRef 0, no tl0 progress: touchmove already released → scroll back to services
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove",  onTouchMove,  { capture: true, passive: false });
+    window.addEventListener("touchend",   onTouchEnd,   { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove",  onTouchMove,  { capture: true });
+      window.removeEventListener("touchend",   onTouchEnd);
+    };
+  }, []);
+
   // ── Fade background icon on center-node hover ──────────────────────────────
   useEffect(() => {
     // Don't animate during any transition — the selection/back timelines own the icon opacity
@@ -930,7 +1052,7 @@ export default function DistillationSection() {
                 transform: hoveredNode === i ? "translate(-50%, -50%) scale(1.12)" : "translate(-50%, -50%)",
               }}
             >
-              <div className="w-[42px] h-[42px] md:w-[76px] md:h-[76px] rounded-full flex justify-center items-center shrink-0 transition-all duration-200"
+              <div className="w-[50px] h-[50px] md:w-[76px] md:h-[76px] rounded-full flex justify-center items-center shrink-0 transition-all duration-200"
                 style={{
                   background: hoveredNode === i
                     ? "rgba(255,31,142,0.16)"
@@ -942,7 +1064,7 @@ export default function DistillationSection() {
                     ? "0 0 36px rgba(255,31,142,0.5), inset 0 0 14px rgba(255,31,142,0.1)"
                     : "0 0 22px rgba(255,31,142,0.14)",
                 }}>
-                <Icon className="w-[18px] h-[18px] md:w-[34px] md:h-[34px] text-white" strokeWidth={1.5} />
+                <Icon className="w-[22px] h-[22px] md:w-[34px] md:h-[34px] text-white" strokeWidth={1.5} />
               </div>
               <span className="text-[0.55rem] md:text-[0.75rem] tracking-[0.18em] uppercase whitespace-normal text-center max-w-[70px] md:max-w-none mt-2 md:mt-3 transition-colors duration-200"
                 style={{
