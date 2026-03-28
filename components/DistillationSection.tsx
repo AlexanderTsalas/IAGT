@@ -1071,7 +1071,7 @@ export default function DistillationSection() {
               </div>
               <div className="flex flex-col items-center text-center gap-1 whitespace-normal w-[90px] md:w-auto mt-2 md:mt-3">
                 <span className="text-[0.8rem] md:text-[1.35rem] font-normal text-white leading-tight">{card.top}</span>
-                <span className="text-[0.55rem] md:text-[0.85rem] tracking-widest text-[var(--pink)] uppercase font-medium mt-1">{card.sub}</span>
+                <span className="text-[0.55rem] md:text-[0.85rem] tracking-widest text-[var(--pink)] uppercase font-medium mt-1 whitespace-nowrap">{card.sub}</span>
               </div>
             </div>
           );

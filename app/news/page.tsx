@@ -68,21 +68,23 @@ function ArticleCard({ article }: { article: Article }) {
           flexDirection: "column",
         }}
       >
-        {/* Cover label */}
+        {/* Cover label & Image */}
         <div
           style={{
-            background: "rgba(255,31,142,0.06)",
+            background: article.coverImage
+              ? `linear-gradient(rgba(17,17,19,0.4), rgba(17,17,19,0.85)), url(${article.coverImage}) center/cover no-repeat`
+              : "rgba(255,31,142,0.06)",
             borderBottom: "1px solid rgba(255,31,142,0.12)",
-            padding: "1.4rem 1.5rem",
+            padding: "14rem 1.5rem 1.4rem", // expanded top padding for significantly larger image area
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-end", // Align text to bottom over the image
             justifyContent: "space-between",
           }}
         >
-          <span style={{ fontSize: "0.6rem", letterSpacing: "0.28em", color: "var(--pink)", fontWeight: 500, textTransform: "uppercase" }}>
+          <span style={{ fontSize: "0.6rem", letterSpacing: "0.28em", color: "var(--pink)", fontWeight: 500, textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
             {article.coverLabel}
           </span>
-          <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.3)", letterSpacing: "0.06em" }}>
+          <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.6)", letterSpacing: "0.06em", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
             {article.readingTime} min read
           </span>
         </div>
@@ -157,12 +159,17 @@ function FeaturedArticle({ article }: { article: Article }) {
         }}
         className="grid grid-cols-1 md:grid-cols-2"
       >
-        {/* Left — stats panel */}
+        {/* Left — image panel / stats block */}
         <div
-          className="bg-[rgba(255,31,142,0.05)] border-b md:border-b-0 md:border-r border-[rgba(255,31,142,0.12)] p-6 md:p-10 flex flex-col justify-between"
+          className="border-b md:border-b-0 md:border-r border-[rgba(255,31,142,0.12)] p-6 md:p-10 flex flex-col justify-between"
+          style={{
+            background: article.coverImage
+              ? `linear-gradient(rgba(17,17,19,0.6), rgba(17,17,19,0.92)), url(${article.coverImage}) center/cover no-repeat`
+              : "rgba(255,31,142,0.05)",
+          }}
         >
           <div>
-            <span style={{ fontSize: "0.58rem", letterSpacing: "0.3em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500 }}>
+            <span style={{ fontSize: "0.58rem", letterSpacing: "0.3em", color: "var(--pink)", textTransform: "uppercase", fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
               Featured · {article.coverLabel}
             </span>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>

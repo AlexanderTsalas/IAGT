@@ -141,7 +141,14 @@ export default async function ArticlePage({
       <div style={{ minHeight: "100vh", background: "var(--dark)", paddingTop: 64 }}>
 
         {/* ── Article header ── */}
-        <header className="border-b border-[#ff1f8e]/10 px-6 md:px-[8%] py-10 md:py-[5vh] pb-8 md:pb-[4vh]">
+        <header
+          className="border-b border-[#ff1f8e]/10 px-6 md:px-[8%] py-10 md:py-[6vh] pb-8 md:pb-[5vh] relative overflow-hidden"
+          style={{
+            background: article.coverImage
+              ? `linear-gradient(rgba(17,17,19,0.7), rgba(17,17,19,1)), url(${article.coverImage}) center/cover no-repeat`
+              : "var(--dark)",
+          }}
+        >
 
           {/* Breadcrumb nav */}
           <nav aria-label="Breadcrumb" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "2rem" }}>

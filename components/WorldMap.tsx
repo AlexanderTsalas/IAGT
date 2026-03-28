@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useRef, useCallback, useEffect } from "react";
-import { ComposableMap, Geographies, Geography, Line, Marker } from "react-simple-maps";
+import { ComposableMap, Geographies, Geography, Line, Marker, Sphere } from "react-simple-maps";
 import { services, type ServiceId } from "@/lib/services";
 import { SUBREGION_PINS, PIN_DIRS } from "@/lib/mapPins";
 const GEO_URL = "/countries-50m.json";
@@ -299,6 +299,9 @@ const WorldMap = memo(({ activeService, hoveredService, hoveredBullet, mapScale,
             </feMerge>
           </filter>
         </defs>
+
+        {/* Global ocean water hue differentiating the map canvas from the deep-dark DOM body */}
+        <Sphere stroke="transparent" fill="#18181e" strokeWidth={0} />
 
         <StaticGeographies onEnter={handleEnter} onLeave={handleLeave} onRegionClick={onRegionClick} />
 

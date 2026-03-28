@@ -35,6 +35,7 @@ export interface Article {
   tags: string[];
   excerpt: string;
   coverLabel: string;
+  coverImage?: string;
   keyStats: KeyStat[];
   sections: ArticleSection[];
   sources: Source[];
@@ -60,6 +61,7 @@ export const articles: Article[] = [
     excerpt:
       "Microsoft's €1 bn commitment and AWS's announced expansion have confirmed what infrastructure specialists have long suspected: Greece is becoming a critical node in Europe's digital backbone.",
     coverLabel: "DATA CENTRES · GREECE",
+    coverImage: "/news/data-centre.png",
     keyStats: [
       { value: "€1bn+", label: "Hyperscaler capex committed (2024–2026)" },
       { value: "3",     label: "Major subsea cable landings in Attica" },
@@ -188,6 +190,7 @@ export const articles: Article[] = [
     excerpt:
       "The AI Act's extraterritorial reach means that any company whose AI system outputs are used in the EU must comply — regardless of where the developer is incorporated. For many technology firms, the most immediate obligation is appointing an EU-based authorised representative.",
     coverLabel: "AI ACT · REGULATORY",
+    coverImage: "/news/ai-compliance.png",
     keyStats: [
       { value: "Aug 2026", label: "High-risk AI provisions enter force" },
       { value: "€35m",     label: "Maximum fine for high-risk non-compliance" },
@@ -328,6 +331,7 @@ export const articles: Article[] = [
     excerpt:
       "The Western Balkans infrastructure cycle is entering its most capital-intensive phase since Yugoslav-era construction. For companies with relevant expertise — engineering, logistics, energy, and digital — the procurement pipeline is substantial and the competition from established local players is more limited than in mature EU markets.",
     coverLabel: "BALKANS · INFRASTRUCTURE",
+    coverImage: "/news/balkans-infrastructure.png",
     keyStats: [
       { value: "€30bn+", label: "Committed IFI and EU funding to Western Balkans (2021–2027)" },
       { value: "6",      label: "Western Balkans countries in EU accession pipeline" },

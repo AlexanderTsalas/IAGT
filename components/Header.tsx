@@ -64,7 +64,7 @@ const Header = forwardRef<HTMLElement, HeaderProps>(
         }}
       >
         {/* DESKTOP LEFT — Navigation */}
-        <div className="hidden md:flex flex-1 max-w-[30%] items-center justify-start">
+        <div className="hidden md:flex flex-1 basis-0 items-center justify-start">
           <nav className="flex items-center gap-8">
             <div style={{ position: "relative" }} onMouseEnter={openDropdown} onMouseLeave={closeDropdown}>
               <button
@@ -122,7 +122,7 @@ const Header = forwardRef<HTMLElement, HeaderProps>(
         </div>
 
         {/* LOGO — Scalable & Truncating */}
-        <div className="flex flex-1 justify-start md:w-1/3 md:justify-center items-center min-w-0 pr-4 md:pr-0">
+        <div className="flex flex-1 basis-0 justify-start md:justify-center items-center min-w-0 pr-4 md:pr-0">
           <Link
             href="/"
             className="flex items-center gap-3 no-underline min-w-0"
@@ -133,15 +133,15 @@ const Header = forwardRef<HTMLElement, HeaderProps>(
               }
             }}
           >
-            <LogoMark size={24} style={{ flexShrink: 0, transform: "translateY(-1px)" }} />
-            <span className="text-white text-[0.65rem] md:text-[0.88rem] font-medium tracking-[0.12em] md:tracking-[0.22em] truncate">
+            <LogoMark size={28} style={{ flexShrink: 0, transform: "translateY(-1px)" }} />
+            <span className="text-white text-[0.7rem] md:text-[0.98rem] font-medium tracking-[0.12em] md:tracking-[0.22em] truncate">
               INTELLIAGTECH
             </span>
           </Link>
         </div>
 
         {/* RIGHT — CTA & Mobile Toggle */}
-        <div className="flex flex-1 md:w-1/3 justify-end items-center gap-4 shrink-0 md:pr-0">
+        <div className="flex flex-1 basis-0 justify-end items-center gap-4 shrink-0 md:pr-0">
           <div className="hidden md:block">
             <Link
               href={rightHref}
